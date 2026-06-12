@@ -1,0 +1,41 @@
+---
+import type { StackBadge } from '../lib/content';
+
+type Props = {
+  stacks: StackBadge[];
+  iconUrls: Map<string, string>;
+};
+
+const { stacks, iconUrls } = Astro.props;
+
+function stackIcon(stack: StackBadge): string | undefined {
+  const iconPath = stack.icon?.replace(/^\.\//, '');
+  return iconPath ? iconUrls.get(iconPath) : undefined;
+}
+---
+
+{
+  stacks.length > 0 && (
+    <div class="stack-badges">
+      {stacks.map((stack) => {
+        const icon = stackIcon(stack);
+        const content = (
+          <>
+            {icon && <img src={icon} alt="" loading="lazy" decoding="async" />}
+            <span>{stack.name}</span>
+          </>
+        );
+
+        return stack.link ? (
+          <a class="stack-badge" href={stack.link} target="_blank" rel="noreferrer">
+            {content}
+          </a>
+        ) : (
+          <span class="stack-badge">
+            {content}
+          </span>
+        );
+      })}
+    </div>
+  )
+}

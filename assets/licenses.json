@@ -1,0 +1,51 @@
+[
+  {
+    "name": "GTQ 그래픽기술자격",
+    "level": "2급",
+    "date": "2018-02-14",
+    "issuer": "한국생산성본부"
+  },
+  {
+    "name": "ITQ 한글파워포인트",
+    "level": "A",
+    "date": "2018-12-27",
+    "issuer": "한국생산성본부"
+  },
+  {
+    "name": "DIAT 스프레드시트",
+    "level": "고급",
+    "date": "2019-02-22",
+    "issuer": "한국정보통신진흥협회"
+  },
+  {
+    "name": "Microsoft AI-900",
+    "level": "합격",
+    "date": "2023-02-27",
+    "issuer": "Microsoft"
+  },
+  {
+    "name": "TOPCIT",
+    "level": "3수준",
+    "score": "570점",
+    "date": "2023-10-28",
+    "issuer": "정보통신기획평가원"
+  },
+  {
+    "name": "TOEIC Bridge",
+    "score": "100점 (만점)",
+    "date": "2023-12-20",
+    "issuer": "ETS"
+  },
+  {
+    "name": "TOEIC",
+    "score": "815점 (LC 440, RC 375)",
+    "date": "2024-02-04",
+    "issuer": "ETS"
+  },
+  {
+    "name": "정보처리산업기사",
+    "level": "합격",
+    "date": "2024-06-27",
+    "issuer": "한국산업인력공단"
+  }
+]

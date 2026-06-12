@@ -1,0 +1,97 @@
+[
+  {
+    "name": "대구교육대학교 C 프로그래밍 경진대회",
+    "level": "우수상",
+    "date": "2017-11-01"
+  },
+  {
+    "name": "제 3회 한국코드페어 SW공모전",
+    "level": "은상",
+    "date": "2021-12-28"
+  },
+  {
+    "name": "대구광역시 ICT 창의성 경진대회",
+    "level": "동상",
+    "date": "2022-06-27"
+  },
+  {
+    "name": "국립대구과학관 SW 융합 해커톤",
+    "level": "최우수상",
+    "date": "2022-07-17"
+  },
+  {
+    "name": "삼성 주니어 SW 창작대회",
+    "level": "상생상",
+    "date": "2022-09-03",
+    "project": "./projects/team/allermi.md"
+  },
+  {
+    "name": "Global Innovator Festa Rookie League",
+    "level": "금상",
+    "date": "2022-10-28"
+  },
+  {
+    "name": "교내 동계 SW 해커톤",
+    "level": "대상",
+    "date": "2023-02-09"
+  },
+  {
+    "name": "Apple WWDC Swift Student Challenge",
+    "level": "우승",
+    "date": "2023-05-10",
+    "project": "./projects/personal/allergist.md"
+  },
+  {
+    "name": "Microsoft Hackers Ground",
+    "level": "최우수상",
+    "date": "2023-06-23"
+  },
+  {
+    "name": "교내 하계 SW 해커톤",
+    "level": "대상",
+    "date": "2023-07-13"
+  },
+  {
+    "name": "SW마이스터고 연합 해커톤",
+    "level": "AWS기업상",
+    "date": "2023-10-13"
+  },
+  {
+    "name": "SK Smarteen App+ Challenge",
+    "level": "최우수상",
+    "date": "2023-11-04",
+    "project": "./projects/team/toongether.md"
+  },
+  {
+    "name": "교내 알고리즘 대회",
+    "level": "은상",
+    "date": "2023-12-19"
+  },
+  {
+    "name": "제 9회 하이톤",
+    "level": "인프런특별상",
+    "date": "2024-02-19"
+  },
+  {
+    "name": "Apple WWDC Swift Student Challenge",
+    "level": "우승",
+    "date": "2024-03-29",
+    "project": "./projects/personal/app-pilot.md"
+  },
+  {
+    "name": "Fun Hackathon Weekend in Silicon Valley",
+    "level": "3위",
+    "date": "2024-08-04"
+  },
+  {
+    "name": "SK Smarteen App+ Challenge",
+    "level": "우수상",
+    "date": "2024-11-08",
+    "project": "./projects/team/loveandcode.md"
+  },
+  {
+    "name": "제 10회 하이톤",
+    "level": "우수상",
+    "date": "2025-02-16"
+  }
+]

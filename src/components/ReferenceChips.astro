@@ -1,0 +1,30 @@
+---
+import type { ReferenceChip } from '../lib/content';
+import { iconForReferenceChip } from '../lib/icons';
+
+type Props = {
+  chips: ReferenceChip[];
+};
+
+const { chips } = Astro.props;
+
+function chipClass(chip: ReferenceChip): string {
+  return `reference-chip reference-chip--${chip.type}`;
+}
+---
+
+{
+  chips.length > 0 && (
+    <div class="reference-chips">
+      {chips.map((chip) => (
+        <a class={chipClass(chip)} href={chip.href} data-reference-link>
+          <img class="reference-chip__icon" src={iconForReferenceChip(chip).src} alt="" loading="lazy" decoding="async" />
+          <span class="reference-chip__body">
+            <span class="reference-chip__label">{chip.label}</span>
+            {chip.meta && <small>{chip.meta}</small>}
+          </span>
+        </a>
+      ))}
+    </div>
+  )
+}

@@ -1,0 +1,390 @@
+---
+import path from 'node:path';
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import profileImage from '@assets/images/personal/profile.jpg';
+import ProjectProblemSolutions from '../components/ProjectProblemSolutions.astro';
+import StackBadges from '../components/StackBadges.astro';
+import { loadPortfolio, type ProjectItem } from '../lib/content';
+import {
+  contactIcon,
+  iconForAward,
+  iconForCareer,
+  iconForEducation,
+  iconForLicense,
+  iconForLink,
+} from '../lib/icons';
+import '../styles/global.css';
+
+const portfolio = await loadPortfolio();
+const siteUrl = 'https://mercen.net/';
+const siteTitle = `${portfolio.main.name} | 소프트웨어 개발자`;
+const siteDescription =
+  '소프트웨어 개발자 이석호의 포트폴리오. 실서비스 제품 개발, 웹/앱/API/인프라 프로젝트와 주요 경력, 수상, 자격 이력을 소개합니다.';
+const openGraphImage = new URL('/opengraph.png', siteUrl).href;
+const keywords = [
+  '이석호',
+  'mercen',
+  '소프트웨어 개발자',
+  '포트폴리오',
+  '웹 개발',
+  '앱 개발',
+  'API 개발',
+  '인프라',
+  'TypeScript',
+  'Swift',
+  'Flutter',
+  'Rust',
+].join(', ');
+const personStructuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: portfolio.main.name,
+  url: siteUrl,
+  image: openGraphImage,
+  jobTitle: 'Software Developer',
+  email: portfolio.main.email ? `mailto:${portfolio.main.email}` : undefined,
+  sameAs: [portfolio.main.github, portfolio.main.linkedin].filter(Boolean),
+};
+
+const stackIconModules = import.meta.glob<string>('../../assets/icons/tech-stacks/*.svg', {
+  eager: true,
+  import: 'default',
+  query: '?url',
+});
+
+const rasterImageModules = import.meta.glob<{ default: ImageMetadata }>('../../assets/projects/**/*.{jpg,jpeg,png}', {
+  eager: true,
+});
+
+const stackIconUrls = new Map(
+  Object.entries(stackIconModules).map(([modulePath, url]) => [normalizeAssetModulePath(modulePath), url]),
+);
+
+const rasterImages = new Map(
+  Object.entries(rasterImageModules).map(([modulePath, module]) => [normalizeAssetModulePath(modulePath), module.default]),
+);
+
+const navItems = [
+  { href: '#intro', label: '소개' },
+  { href: '#education', label: '학력' },
+  { href: '#career', label: '경력' },
+  { href: '#awards', label: '수상' },
+  { href: '#projects', label: '프로젝트' },
+  { href: '#licenses', label: '자격' },
+];
+
+function normalizeAssetModulePath(modulePath: string): string {
+  return modulePath.replace('../../assets/', '').replace(/^\.\//, '');
+}
+
+function resolveMockupImage(project: ProjectItem): ImageMetadata | undefined {
+  if (!project.mockupImage) return undefined;
+  if (/^(https?:|\/)/.test(project.mockupImage)) return undefined;
+
+  const sourceDir = path.posix.dirname(project.sourcePath);
+  const normalized = path.posix
+    .normalize(path.posix.join(sourceDir === '.' ? '' : sourceDir, project.mockupImage))
+    .replace(/^\.\//, '');
+
+  return rasterImages.get(normalized);
+}
+
+function emailHref(value: string): string {
+  return `mailto:${value}`;
+}
+---
+
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={siteDescription} />
+    <meta name="author" content={portfolio.main.name} />
+    <meta name="keywords" content={keywords} />
+    <meta name="robots" content="index, follow" />
+    <meta name="googlebot" content="index, follow, max-image-preview:large" />
+    <meta name="theme-color" content="#080808" />
+    <meta property="og:title" content={siteTitle} />
+    <meta property="og:description" content={siteDescription} />
+    <meta property="og:type" content="profile" />
+    <meta property="og:url" content={siteUrl} />
+    <meta property="og:image" content={openGraphImage} />
+    <meta property="og:image:secure_url" content={openGraphImage} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={`${portfolio.main.name} 포트폴리오 미리보기 이미지`} />
+    <meta property="og:site_name" content="mercen.net" />
+    <meta property="og:locale" content="ko_KR" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={siteTitle} />
+    <meta name="twitter:description" content={siteDescription} />
+    <meta name="twitter:image" content={openGraphImage} />
+    <meta name="twitter:image:alt" content={`${portfolio.main.name} 포트폴리오 미리보기 이미지`} />
+    <link rel="canonical" href={siteUrl} />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="preload" href="/fonts/D2CodingLigature-Regular.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/D2CodingLigature-Bold.woff2" as="font" type="font/woff2" crossorigin />
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(personStructuredData)} />
+    <title>{siteTitle}</title>
+  </head>
+  <body>
+    <div class="scroll-progress" aria-hidden="true"><span></span></div>
+
+    <header class="site-header">
+      <nav class="site-nav" aria-label="주요 섹션">
+        {navItems.map((item) => (
+          <a href={item.href} data-nav-link>{item.label}</a>
+        ))}
+      </nav>
+    </header>
+
+    <main>
+      <section id="intro" class="hero section-shell" data-nav-section>
+        <div class="hero__profile" aria-label="프로필">
+          <div class="profile-frame">
+            <Image src={profileImage} format="webp" alt={`${portfolio.main.name} 프로필 사진`} loading="eager" decoding="async" />
+          </div>
+          <div class="profile-identity">
+            <h1>{portfolio.main.name}</h1>
+            <div class="profile-links" aria-label="연락처와 링크">
+              {portfolio.main.email && (
+                <a href={emailHref(portfolio.main.email)}>
+                  <img class="ui-icon" src={contactIcon('email').src} alt="" loading="lazy" decoding="async" />
+                  <span class="profile-link__body">
+                    <strong>Email</strong>
+                    <span>{portfolio.main.email}</span>
+                  </span>
+                </a>
+              )}
+              {portfolio.main.github && (
+                <a href={portfolio.main.github} target="_blank" rel="noreferrer">
+                  <img class="ui-icon" src={contactIcon('github').src} alt="" loading="lazy" decoding="async" />
+                  <span class="profile-link__body">
+                    <strong>GitHub</strong>
+                    <span>mercen-lee</span>
+                  </span>
+                </a>
+              )}
+              {portfolio.main.linkedin && (
+                <a href={portfolio.main.linkedin} target="_blank" rel="noreferrer">
+                  <img class="ui-icon" src={contactIcon('linkedin').src} alt="" loading="lazy" decoding="async" />
+                  <span class="profile-link__body">
+                    <strong>LinkedIn</strong>
+                    <span>mercen</span>
+                  </span>
+                </a>
+              )}
+              {portfolio.main.birth_date && (
+                <span>
+                  <img class="ui-icon" src={contactIcon('birth').src} alt="" loading="lazy" decoding="async" />
+                  <span class="profile-link__body">
+                    <strong>Birth</strong>
+                    <span>{portfolio.main.birth_date}</span>
+                  </span>
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div class="hero__content">
+          <div class="hero__prose" set:html={portfolio.main.html} />
+        </div>
+      </section>
+
+      <section id="education" class="section-shell" data-nav-section>
+        <div class="section-heading reveal">
+          <h2>학력</h2>
+        </div>
+        <div class="timeline">
+          {portfolio.educations.map((education) => (
+            <article id={education.id} class="timeline-card reveal" data-highlight-target>
+              <div class="timeline-card__meta">
+                <span>{education.period}</span>
+                <span>{education.role}</span>
+              </div>
+              <div class="record-title">
+                <img class="record-icon" src={iconForEducation(education).src} alt="" loading="lazy" decoding="async" />
+                <h3>{education.name}</h3>
+              </div>
+              {education.descriptionHtml && <p set:html={education.descriptionHtml} />}
+              {education.highlightsHtml && (
+                <ul>
+                  {education.highlightsHtml.map((highlight) => <li set:html={highlight} />)}
+                </ul>
+              )}
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section id="career" class="section-shell" data-nav-section>
+        <div class="section-heading reveal">
+          <h2>경력</h2>
+        </div>
+        <div class="career-stack">
+          {portfolio.careers.map((career) => {
+            const contributionItems = [...(career.responsibilitiesHtml ?? []), ...(career.highlightsHtml ?? [])];
+
+            return (
+              <details id={career.id} class="career-card t-resize reveal" data-highlight-target data-collapsible-record>
+                <summary class="career-card__summary">
+                  <div class="record-header">
+                    <div>
+                      <span class="record-kicker">{career.period}</span>
+                      <div class="record-title">
+                        <img class="record-icon" src={iconForCareer(career).src} alt="" loading="lazy" decoding="async" />
+                        <h3>{career.display_name ?? career.company}</h3>
+                      </div>
+                    </div>
+                    <div class="record-role">
+                      <span>{career.role}</span>
+                      {career.locations && <small>{career.locations.join(' / ')}</small>}
+                    </div>
+                  </div>
+                  <span class="record-indicator" aria-hidden="true"></span>
+                </summary>
+                <div class="career-card__body">
+                  {career.descriptionHtml && <p class="record-description" set:html={career.descriptionHtml} />}
+                  {contributionItems.length > 0 && (
+                    <ul class="dense-list" aria-label="주요 기여">
+                      {contributionItems.map((item) => <li set:html={item} />)}
+                    </ul>
+                  )}
+                  <StackBadges stacks={career.stacks} iconUrls={stackIconUrls} />
+                </div>
+              </details>
+            );
+          })}
+        </div>
+      </section>
+
+      <section id="awards" class="section-shell" data-nav-section>
+        <div class="section-heading reveal">
+          <h2>수상이력</h2>
+        </div>
+        <div class="credential-list" aria-label="전체 수상이력">
+          {portfolio.awards.map((award) => (
+            <article id={award.id} class="credential-row reveal" data-highlight-target>
+              <time class="credential-date">{award.date}</time>
+              <div class="credential-main">
+                <img class="list-icon" src={iconForAward(award).src} alt="" loading="lazy" decoding="async" />
+                <div>
+                  <h3>{award.name}</h3>
+                  {award.level && <span class="credential-detail">{award.level}</span>}
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section id="projects" class="section-shell" data-nav-section>
+        <div class="section-heading reveal">
+          <h2>프로젝트</h2>
+        </div>
+        <div class="project-stack">
+          {portfolio.projects.map((project) => {
+            const mockup = resolveMockupImage(project);
+            return (
+              <details id={project.id} class="project-record t-resize reveal" data-highlight-target data-collapsible-record>
+                <summary class="project-record__summary">
+                  <div class="project-record__summary-copy">
+                    <h3>{project.title}</h3>
+                    {project.descriptionHtml && <p set:html={project.descriptionHtml} />}
+                    {project.meta.length > 0 && (
+                      <div class="project-record__meta">
+                        {project.meta.map((item) => {
+                          const metaClass = `project-record__meta-item project-record__meta-item--${item.kind}`;
+                          return (
+                            <span class={metaClass}>
+                              {item.href ? (
+                                <a class="project-record__meta-link" href={item.href} data-reference-link data-reference-type={item.type}>
+                                  <span class="project-record__meta-value">{item.value}</span>
+                                </a>
+                              ) : (
+                                <span class="project-record__meta-value">{item.value}</span>
+                              )}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  <span class="project-record__indicator" aria-hidden="true"></span>
+                </summary>
+
+                <div class="project-record__body">
+                  {mockup && (
+                    <div class="project-mockup">
+                      <Image src={mockup} format="webp" alt={`${project.title} 목업 이미지`} loading="lazy" decoding="async" />
+                    </div>
+                  )}
+
+                  <StackBadges stacks={project.stacks} iconUrls={stackIconUrls} />
+                  {project.links.length > 0 && (
+                    <div class="external-links">
+                      {project.links.map((link) => (
+                        <a href={link.url} target="_blank" rel="noreferrer">
+                          <img class="ui-icon" src={iconForLink(link).src} alt="" loading="lazy" decoding="async" />
+                          <span>{link.label}</span>
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                  {project.sourceCode && (
+                    <aside class="project-source-note" aria-label="소스 코드 공개 범위">
+                      <span>공개 범위</span>
+                      <p>{project.sourceCode}</p>
+                    </aside>
+                  )}
+                  <div class="markdown-body project-content">
+                    {project.htmlBeforeProblemSolutions && (
+                      <div class="project-content__segment" set:html={project.htmlBeforeProblemSolutions} />
+                    )}
+                    <ProjectProblemSolutions items={project.problemSolutions} />
+                    {project.htmlAfterProblemSolutions && (
+                      <div class="project-content__segment" set:html={project.htmlAfterProblemSolutions} />
+                    )}
+                  </div>
+                </div>
+              </details>
+            );
+          })}
+        </div>
+      </section>
+
+      <section id="licenses" class="section-shell" data-nav-section>
+        <div class="section-heading reveal">
+          <h2>자격 및 점수</h2>
+        </div>
+        <div class="credential-list" aria-label="전체 자격 및 점수">
+          {portfolio.licenses.map((license) => (
+            <article id={license.id} class="credential-row reveal" data-highlight-target>
+              <time class="credential-date">{license.date}</time>
+              <div class="credential-main">
+                <img class="list-icon" src={iconForLicense(license).src} alt="" loading="lazy" decoding="async" />
+                <div>
+                  <h3>{license.name}</h3>
+                  <span class="credential-detail">{license.score ?? license.level}</span>
+                  {license.issuer && <small>{license.issuer}</small>}
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>© {new Date().getFullYear()} {portfolio.main.name}</span>
+      <a href="/fonts/D2Coding-NOTICE.txt">D2Coding OFL notice</a>
+    </footer>
+
+    <script src="../scripts/interactions.ts"></script>
+  </body>
+</html>
