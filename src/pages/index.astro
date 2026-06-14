@@ -57,6 +57,13 @@ const rasterImageModules = import.meta.glob<{ default: ImageMetadata }>('../../a
   eager: true,
 });
 
+const personalImageModules = import.meta.glob<{ default: ImageMetadata }>(
+  '../../assets/images/personal/*.{jpg,jpeg,png,webp,avif}',
+  {
+    eager: true,
+  },
+);
+
 const stackIconUrls = new Map(
   Object.entries(stackIconModules).map(([modulePath, url]) => [normalizeAssetModulePath(modulePath), url]),
 );
@@ -64,6 +71,32 @@ const stackIconUrls = new Map(
 const rasterImages = new Map(
   Object.entries(rasterImageModules).map(([modulePath, module]) => [normalizeAssetModulePath(modulePath), module.default]),
 );
+
+const personalGalleryItems = [
+  { filename: 'apple-park', description: 'Apple Park 초대' },
+  { filename: 'timcook', description: '팀 쿡 Apple CEO와의 만남' },
+  { filename: 'wwdc24', description: 'WWDC24에 Swift 공모전 수상자 자격으로 참가' },
+  { filename: 'kbs', description: 'KBS 스카우트 5 얼리어잡터 출연' },
+  { filename: 'ducami', description: '교육봉사동아리 DUCAMI 활동' },
+  { filename: 'ict-expo', description: 'ICT 융합 엑스포 출품' },
+  { filename: 'softwave', description: '대한민국 소프트웨어대전 출품' },
+  { filename: 'impact', description: 'Impact Lounge 연사' },
+  { filename: 'ai-expo', description: '국제인공지능대전 출품' },
+] as const;
+
+const personalImagesByFilename = new Map(
+  Object.entries(personalImageModules).map(([modulePath, module]) => [
+    path.posix.basename(modulePath).replace(/\.[^.]+$/, ''),
+    module.default,
+  ]),
+);
+
+const personalGalleryImages = personalGalleryItems
+  .map((item) => ({
+    ...item,
+    image: personalImagesByFilename.get(item.filename),
+  }))
+  .filter((item): item is typeof item & { image: ImageMetadata } => Boolean(item.image));
 
 const navItems = [
   { href: '#intro', label: '소개' },
@@ -194,6 +227,31 @@ function emailHref(value: string): string {
         <div class="hero__content">
           <div class="hero__prose" set:html={portfolio.main.html} />
         </div>
+
+        {personalGalleryImages.length > 0 && (
+          <div class="personal-gallery reveal" aria-label="개인 이미지 슬라이드" data-personal-gallery>
+            <div class="personal-gallery__viewport" data-gallery-viewport>
+              <div class="personal-gallery__track" data-gallery-track>
+                {personalGalleryImages.map((item) => (
+                  <figure class="personal-gallery__item" data-gallery-item>
+                    <div class="personal-gallery__image">
+                      <Image
+                        src={item.image}
+                        format="webp"
+                        widths={[280, 320, 480, 640]}
+                        sizes="(max-width: 640px) 72vw, 320px"
+                        alt={`${portfolio.main.name} 개인 이미지: ${item.description}`}
+                        loading="eager"
+                        decoding="async"
+                      />
+                    </div>
+                    <figcaption>{item.description}</figcaption>
+                  </figure>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       <section id="education" class="section-shell" data-nav-section>
