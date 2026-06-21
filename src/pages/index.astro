@@ -14,6 +14,7 @@ import {
   iconForLicense,
   iconForLink,
 } from '../lib/icons';
+import { googleAnalyticsId } from '../scripts/analytics';
 import '../styles/global.css';
 
 const portfolio = await loadPortfolio();
@@ -46,6 +47,15 @@ const personStructuredData = {
   email: portfolio.main.email ? `mailto:${portfolio.main.email}` : undefined,
   sameAs: [portfolio.main.github, portfolio.main.linkedin].filter(Boolean),
 };
+const googleAnalyticsBootstrap = `
+window.dataLayer = window.dataLayer || [];
+window.gtag = window.gtag || function gtag(){ window.dataLayer.push(arguments); };
+window.gtag('js', new Date());
+window.gtag('config', '${googleAnalyticsId}', {
+  send_page_view: true,
+  transport_type: 'beacon'
+});
+`;
 
 const stackIconModules = import.meta.glob<string>('../../assets/icons/tech-stacks/*.svg', {
   eager: true,
@@ -161,6 +171,8 @@ function emailHref(value: string): string {
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="preload" href="/fonts/D2CodingLigature-Regular.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/D2CodingLigature-Bold.woff2" as="font" type="font/woff2" crossorigin />
+    <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`}></script>
+    <script is:inline set:html={googleAnalyticsBootstrap}></script>
     <script type="application/ld+json" is:inline set:html={JSON.stringify(personStructuredData)} />
     <title>{siteTitle}</title>
   </head>
@@ -170,7 +182,15 @@ function emailHref(value: string): string {
     <header class="site-header">
       <nav class="site-nav" aria-label="주요 섹션">
         {navItems.map((item) => (
-          <a href={item.href} data-nav-link>{item.label}</a>
+          <a
+            href={item.href}
+            data-nav-link
+            data-analytics-link="nav"
+            data-analytics-label={item.label}
+            data-analytics-target={item.href}
+          >
+            {item.label}
+          </a>
         ))}
       </nav>
     </header>
@@ -185,7 +205,12 @@ function emailHref(value: string): string {
             <h1>{portfolio.main.name}</h1>
             <div class="profile-links" aria-label="연락처와 링크">
               {portfolio.main.email && (
-                <a href={emailHref(portfolio.main.email)}>
+                <a
+                  href={emailHref(portfolio.main.email)}
+                  data-analytics-link="contact"
+                  data-analytics-label="Email"
+                  data-analytics-target="mailto"
+                >
                   <img class="ui-icon" src={contactIcon('email').src} alt="" loading="lazy" decoding="async" />
                   <span class="profile-link__body">
                     <strong>Email</strong>
@@ -194,7 +219,14 @@ function emailHref(value: string): string {
                 </a>
               )}
               {portfolio.main.github && (
-                <a href={portfolio.main.github} target="_blank" rel="noreferrer">
+                <a
+                  href={portfolio.main.github}
+                  target="_blank"
+                  rel="noreferrer"
+                  data-analytics-link="contact"
+                  data-analytics-label="GitHub"
+                  data-analytics-target="github"
+                >
                   <img class="ui-icon" src={contactIcon('github').src} alt="" loading="lazy" decoding="async" />
                   <span class="profile-link__body">
                     <strong>GitHub</strong>
@@ -203,7 +235,14 @@ function emailHref(value: string): string {
                 </a>
               )}
               {portfolio.main.linkedin && (
-                <a href={portfolio.main.linkedin} target="_blank" rel="noreferrer">
+                <a
+                  href={portfolio.main.linkedin}
+                  target="_blank"
+                  rel="noreferrer"
+                  data-analytics-link="contact"
+                  data-analytics-label="LinkedIn"
+                  data-analytics-target="linkedin"
+                >
                   <img class="ui-icon" src={contactIcon('linkedin').src} alt="" loading="lazy" decoding="async" />
                   <span class="profile-link__body">
                     <strong>LinkedIn</strong>
@@ -233,7 +272,7 @@ function emailHref(value: string): string {
             <div class="personal-gallery__viewport" data-gallery-viewport>
               <div class="personal-gallery__track" data-gallery-track>
                 {personalGalleryImages.map((item) => (
-                  <figure class="personal-gallery__item" data-gallery-item>
+                  <figure class="personal-gallery__item" data-gallery-item data-analytics-label={item.description}>
                     <div class="personal-gallery__image">
                       <Image
                         src={item.image}
@@ -289,7 +328,16 @@ function emailHref(value: string): string {
             const contributionItems = [...(career.responsibilitiesHtml ?? []), ...(career.highlightsHtml ?? [])];
 
             return (
-              <details id={career.id} class="career-card t-resize reveal" data-highlight-target data-collapsible-record>
+              <details
+                id={career.id}
+                class="career-card t-resize reveal"
+                data-highlight-target
+                data-collapsible-record
+                data-analytics-record
+                data-analytics-record-type="career"
+                data-analytics-record-id={career.id}
+                data-analytics-record-label={career.display_name ?? career.company}
+              >
                 <summary class="career-card__summary">
                   <div class="record-header">
                     <div>
@@ -313,7 +361,12 @@ function emailHref(value: string): string {
                       {contributionItems.map((item) => <li set:html={item} />)}
                     </ul>
                   )}
-                  <StackBadges stacks={career.stacks} iconUrls={stackIconUrls} />
+                  <StackBadges
+                    stacks={career.stacks}
+                    iconUrls={stackIconUrls}
+                    contextType="career"
+                    contextLabel={career.display_name ?? career.company}
+                  />
                 </div>
               </details>
             );
@@ -349,7 +402,16 @@ function emailHref(value: string): string {
           {portfolio.projects.map((project) => {
             const mockup = resolveMockupImage(project);
             return (
-              <details id={project.id} class="project-record t-resize reveal" data-highlight-target data-collapsible-record>
+              <details
+                id={project.id}
+                class="project-record t-resize reveal"
+                data-highlight-target
+                data-collapsible-record
+                data-analytics-record
+                data-analytics-record-type="project"
+                data-analytics-record-id={project.id}
+                data-analytics-record-label={project.title}
+              >
                 <summary class="project-record__summary">
                   <div class="project-record__summary-copy">
                     <h3>{project.title}</h3>
@@ -361,7 +423,17 @@ function emailHref(value: string): string {
                           return (
                             <span class={metaClass}>
                               {item.href ? (
-                                <a class="project-record__meta-link" href={item.href} data-reference-link data-reference-type={item.type}>
+                                <a
+                                  class="project-record__meta-link"
+                                  href={item.href}
+                                  data-reference-link
+                                  data-reference-type={item.type}
+                                  data-analytics-link="reference"
+                                  data-analytics-label={item.value}
+                                  data-analytics-reference-type={item.type}
+                                  data-analytics-context-type="project"
+                                  data-analytics-context-label={project.title}
+                                >
                                   <span class="project-record__meta-value">{item.value}</span>
                                 </a>
                               ) : (
@@ -383,11 +455,24 @@ function emailHref(value: string): string {
                     </div>
                   )}
 
-                  <StackBadges stacks={project.stacks} iconUrls={stackIconUrls} />
+                  <StackBadges
+                    stacks={project.stacks}
+                    iconUrls={stackIconUrls}
+                    contextType="project"
+                    contextLabel={project.title}
+                  />
                   {project.links.length > 0 && (
                     <div class="external-links">
                       {project.links.map((link) => (
-                        <a href={link.url} target="_blank" rel="noreferrer">
+                        <a
+                          href={link.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          data-analytics-link="project"
+                          data-analytics-label={link.label}
+                          data-analytics-context-type="project"
+                          data-analytics-context-label={project.title}
+                        >
                           <img class="ui-icon" src={iconForLink(link).src} alt="" loading="lazy" decoding="async" />
                           <span>{link.label}</span>
                         </a>
@@ -440,7 +525,9 @@ function emailHref(value: string): string {
 
     <footer class="site-footer">
       <span>© {new Date().getFullYear()} {portfolio.main.name}</span>
-      <a href="/fonts/D2Coding-NOTICE.txt">D2Coding OFL notice</a>
+      <a href="/fonts/D2Coding-NOTICE.txt" data-analytics-link="resource" data-analytics-label="D2Coding OFL notice">
+        D2Coding OFL notice
+      </a>
     </footer>
 
     <script src="../scripts/interactions.ts"></script>

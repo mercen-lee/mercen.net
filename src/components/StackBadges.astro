@@ -4,9 +4,11 @@ import type { StackBadge } from '../lib/content';
 type Props = {
   stacks: StackBadge[];
   iconUrls: Map<string, string>;
+  contextType?: string;
+  contextLabel?: string;
 };
 
-const { stacks, iconUrls } = Astro.props;
+const { stacks, iconUrls, contextType, contextLabel } = Astro.props;
 
 function stackIcon(stack: StackBadge): string | undefined {
   const iconPath = stack.icon?.replace(/^\.\//, '');
@@ -27,7 +29,16 @@ function stackIcon(stack: StackBadge): string | undefined {
         );
 
         return stack.link ? (
-          <a class="stack-badge" href={stack.link} target="_blank" rel="noreferrer">
+          <a
+            class="stack-badge"
+            href={stack.link}
+            target="_blank"
+            rel="noreferrer"
+            data-analytics-link="stack"
+            data-analytics-label={stack.name}
+            data-analytics-context-type={contextType}
+            data-analytics-context-label={contextLabel}
+          >
             {content}
           </a>
         ) : (

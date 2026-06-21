@@ -1,5 +1,6 @@
 import Lenis from 'lenis';
 import 'lenis/dist/lenis.css';
+import { trackEvent, trackPageView } from './analytics';
 
 const root = document.documentElement;
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -18,6 +19,9 @@ const lenis = reducedMotion
 let pointerFrame = 0;
 let pointerX = window.innerWidth * 0.5;
 let pointerY = window.innerHeight * 0.3;
+const scrollDepthMilestones = [25, 50, 75, 90, 100];
+const trackedScrollDepths = new Set<number>();
+const trackedSectionViews = new Set<string>();
 
 function applyPointerBackground(): void {
   pointerFrame = 0;
@@ -208,6 +212,7 @@ function scrollToTarget(target: HTMLElement, hash: string, updateHistory: boolea
 
   if (updateHistory && window.location.hash !== hash) {
     history.pushState(null, '', hash);
+    trackPageView(hash);
   }
 }
 
@@ -216,9 +221,21 @@ for (const record of collapsibleRecords) {
   summary?.addEventListener('click', (event) => {
     if ((event.target as Element | null)?.closest('a')) return;
     event.preventDefault();
+    trackRecordToggle(record, record.open ? 'close' : 'open', 'summary');
     toggleRecord(record);
   });
 }
+
+document.addEventListener(
+  'click',
+  (event) => {
+    const link = (event.target as Element | null)?.closest<HTMLAnchorElement>('a[href]');
+    if (!link) return;
+
+    trackLinkClick(link);
+  },
+  { capture: true },
+);
 
 document.addEventListener('click', (event) => {
   const link = (event.target as Element | null)?.closest<HTMLAnchorElement>('a[href^="#"]');
@@ -234,7 +251,10 @@ document.addEventListener('click', (event) => {
 
 window.addEventListener('hashchange', () => {
   const target = targetFromHash(window.location.hash);
-  if (target) scrollToTarget(target, window.location.hash, false);
+  if (target) {
+    scrollToTarget(target, window.location.hash, false);
+    trackPageView(window.location.hash);
+  }
 });
 
 if (window.location.hash) {
@@ -248,6 +268,7 @@ function updateProgress(): void {
   const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
   const progress = Math.min(1, Math.max(0, window.scrollY / max));
   root.style.setProperty('--scroll-progress', progress.toFixed(4));
+  trackScrollDepth(progress);
 }
 
 function updateScrollDrivenState(): void {
@@ -285,6 +306,8 @@ function setupPersonalGallery(gallery: HTMLElement): void {
   let resizeFrame = 0;
   let isPaused = false;
   let isLoopPrepared = false;
+
+  trackGalleryView(gallery);
 
   function canSlide(): boolean {
     return items.length > 1 && itemStep > 0;
@@ -411,12 +434,14 @@ function setupPersonalGallery(gallery: HTMLElement): void {
     if (dragDeltaX < 0) {
       await animateTrackTo(-itemStep * 2);
       resetLoopPosition(-itemStep, rotateForward);
+      trackGalleryInteraction(gallery, 'drag_next');
       isAnimating = false;
       return;
     }
 
     await animateTrackTo(0);
     resetLoopPosition(-itemStep, rotateBackward);
+    trackGalleryInteraction(gallery, 'drag_previous');
     isAnimating = false;
   }
 
@@ -561,6 +586,7 @@ function setupPersonalGallery(gallery: HTMLElement): void {
         await performSlideNext();
       }
 
+      trackGalleryInteraction(gallery, clickDirection);
       isAnimating = false;
       isPaused = isGalleryHovered();
       deferAutoplayAfterManualControl();
@@ -659,6 +685,7 @@ function setActiveNav(hash: string): void {
   for (const [linkHash, link] of navLinks) {
     link.classList.toggle('is-active', linkHash === hash);
   }
+  trackSectionView(hash);
 }
 
 function navHashForTarget(target: HTMLElement): string | null {
@@ -722,6 +749,152 @@ window.addEventListener('scroll', scheduleActiveNavUpdate, { passive: true });
 window.addEventListener('scrollend', releaseActiveNavHold);
 window.addEventListener('resize', scheduleActiveNavUpdate);
 lenis?.on('scroll', updateScrollDrivenState);
+
+function textLabel(element: HTMLElement): string {
+  return element.dataset.analyticsLabel || element.textContent?.replace(/\s+/g, ' ').trim() || element.id || 'unknown';
+}
+
+function linkDomain(link: HTMLAnchorElement): string | undefined {
+  try {
+    const url = new URL(link.href, window.location.href);
+    return url.hostname || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function linkTarget(link: HTMLAnchorElement): string {
+  return link.dataset.analyticsTarget || link.hash || link.getAttribute('href') || link.href;
+}
+
+function trackLinkClick(link: HTMLAnchorElement): void {
+  const kind = link.dataset.analyticsLink;
+  const params = {
+    event_label: textLabel(link),
+    link_url: link.href,
+    link_domain: linkDomain(link),
+    link_target: linkTarget(link),
+    context_type: link.dataset.analyticsContextType,
+    context_label: link.dataset.analyticsContextLabel,
+    reference_type: link.dataset.analyticsReferenceType || link.dataset.referenceType,
+    transport_type: 'beacon',
+  };
+
+  if (kind === 'nav') {
+    trackEvent('nav_click', {
+      ...params,
+      section_id: link.hash.replace(/^#/, ''),
+      section_label: textLabel(link),
+    });
+    return;
+  }
+
+  if (kind === 'contact') {
+    trackEvent('contact_click', params);
+    return;
+  }
+
+  if (kind === 'reference' || link.matches('[data-reference-link]')) {
+    trackEvent('reference_click', params);
+    return;
+  }
+
+  if (kind === 'project') {
+    trackEvent('project_link_click', params);
+    return;
+  }
+
+  if (kind === 'stack') {
+    trackEvent('stack_link_click', params);
+    return;
+  }
+
+  if (kind === 'resource') {
+    trackEvent('resource_click', params);
+    return;
+  }
+
+  try {
+    const url = new URL(link.href, window.location.href);
+    if (url.origin !== window.location.origin && ['http:', 'https:', 'mailto:'].includes(url.protocol)) {
+      trackEvent('outbound_click', params);
+    }
+  } catch {
+    return;
+  }
+}
+
+function trackRecordToggle(record: HTMLDetailsElement, state: 'open' | 'close', source: string): void {
+  trackEvent('record_toggle', {
+    record_type: record.dataset.analyticsRecordType,
+    record_id: record.dataset.analyticsRecordId || record.id,
+    record_label: record.dataset.analyticsRecordLabel || record.id,
+    record_state: state,
+    interaction_source: source,
+  });
+}
+
+function trackScrollDepth(progress: number): void {
+  const depth = Math.floor(progress * 100);
+
+  for (const milestone of scrollDepthMilestones) {
+    if (depth < milestone || trackedScrollDepths.has(milestone)) continue;
+    trackedScrollDepths.add(milestone);
+    trackEvent('scroll_depth', {
+      scroll_depth: milestone,
+      event_label: `${milestone}%`,
+      non_interaction: true,
+    });
+  }
+}
+
+function trackSectionView(hash: string): void {
+  if (!hash || trackedSectionViews.has(hash)) return;
+
+  trackedSectionViews.add(hash);
+  const link = navLinks.get(hash);
+
+  trackEvent('section_view', {
+    section_id: hash.replace(/^#/, ''),
+    section_label: link ? textLabel(link) : hash,
+    non_interaction: true,
+  });
+}
+
+function activeGalleryItem(gallery: HTMLElement): string | undefined {
+  const items = gallery.querySelectorAll<HTMLElement>('[data-gallery-item]');
+  return (items.length > 1 ? items[1] : items[0])?.dataset.analyticsLabel;
+}
+
+function trackGalleryInteraction(gallery: HTMLElement, action: string): void {
+  trackEvent('gallery_interaction', {
+    gallery_id: 'personal_gallery',
+    gallery_action: action,
+    gallery_item: activeGalleryItem(gallery),
+  });
+}
+
+function trackGalleryView(gallery: HTMLElement): void {
+  if (!('IntersectionObserver' in window)) return;
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        trackEvent('gallery_view', {
+          gallery_id: 'personal_gallery',
+          gallery_item_count: gallery.querySelectorAll('[data-gallery-item]').length,
+          non_interaction: true,
+        });
+        observer.disconnect();
+        break;
+      }
+    },
+    { threshold: 0.45 },
+  );
+
+  observer.observe(gallery);
+}
 
 const revealItems = [...document.querySelectorAll<HTMLElement>('.reveal')];
 if (reducedMotion) {
