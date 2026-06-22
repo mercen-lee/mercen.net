@@ -1,0 +1,20 @@
+---
+const fileName = 'seokho-lee-resume.pdf';
+const resumeUrl = '/resume.pdf';
+---
+
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>이력서 다운로드</title>
+  </head>
+  <body>
+    <a id="resume-download" href={resumeUrl} download={fileName}>이력서 다운로드</a>
+    <script is:inline>
+      document.getElementById('resume-download')?.click();
+    </script>
+  </body>
+</html>
