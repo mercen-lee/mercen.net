@@ -1,6 +1,7 @@
 ---
 title: Windows 11 for Galaxy Tab 6 Lite
 description: Galaxy Tab 6 Lite(Exynos 9611)에 **Windows 11 on ARM을 설치**하는 프로젝트
+logo_image: ../../images/projects/gta4xl-win11.webp
 period: 2026.05 ~
 source_code: 소스 비공개 · 포팅 실험 단계로, 요청 시 공유 가능
 vibe_coded: true

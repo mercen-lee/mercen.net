@@ -1,6 +1,7 @@
 ---
 title: Allermi
 description: 알레르기 정보를 바탕으로 **안전한 식품 선택**을 돕는 서비스
+logo_image: ../../images/projects/allermi.webp
 period: 2022.07 ~ 2022.09
 team: Allermi Project
 source_code: 소스 공개 · 프로젝트 조직 repo 확인 가능

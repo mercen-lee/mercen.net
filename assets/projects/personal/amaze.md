@@ -1,6 +1,7 @@
 ---
 title: Amaze
 description: Rust로 직접 구현하는 **멀티플랫폼 AI-friendly 게임 엔진**
+logo_image: ../../images/projects/amaze.webp
 period: 2026.05 ~
 source_code: 소스 비공개 · 개발 중인 엔진으로, 요청 시 공유 가능
 vibe_coded: true

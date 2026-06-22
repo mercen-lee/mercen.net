@@ -2,6 +2,7 @@
   {
     "type": "education",
     "name": "대구교육대학교 정보영재교육원",
+    "logo_image": "./images/education/dnue.webp",
     "role": "수료",
     "period": "2017.02 ~ 2018.10",
     "description": "마인드스톰, **C언어, Python, App Inventor** 등 개발 기초를 학습했습니다.",
@@ -12,6 +13,7 @@
   {
     "type": "education",
     "name": "대구소프트웨어마이스터고등학교",
+    "logo_image": "./images/education/dgsw.webp",
     "role": "인공지능소프트웨어과",
     "period": "2022.03 ~ 2025.02",
     "description": "**C언어, Java, 자료구조, 컴퓨터 시스템 일반** 등 개발 지식을 학습하고 **실서비스 개발 프로젝트에 참여**했습니다.",

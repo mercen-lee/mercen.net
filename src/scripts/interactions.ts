@@ -657,6 +657,204 @@ for (const gallery of document.querySelectorAll<HTMLElement>('[data-personal-gal
   setupPersonalGallery(gallery);
 }
 
+function setupProjectMockupSlider(slider: HTMLElement): void {
+  const viewport = slider.querySelector<HTMLElement>('[data-project-mockup-viewport]');
+  const track = slider.querySelector<HTMLElement>('[data-project-mockup-track]');
+  const items = [...slider.querySelectorAll<HTMLElement>('[data-project-mockup-item]')];
+
+  if (!viewport || !track || items.length === 0) return;
+
+  const viewportElement = viewport;
+  const trackElement = track;
+  const dragThreshold = 4;
+  let activePointerId: number | null = null;
+  let dragStartX = 0;
+  let dragDeltaX = 0;
+  let startScrollLeft = 0;
+  let hasDragged = false;
+  let resizeFrame = 0;
+
+  function maxScrollLeft(): number {
+    return Math.max(0, viewportElement.scrollWidth - viewportElement.clientWidth);
+  }
+
+  function canSlide(): boolean {
+    return maxScrollLeft() > 1;
+  }
+
+  function clampScrollLeft(value: number): number {
+    return Math.min(maxScrollLeft(), Math.max(0, value));
+  }
+
+  function viewportPaddingStart(): number {
+    return Number.parseFloat(getComputedStyle(viewportElement).paddingInlineStart) || 0;
+  }
+
+  function targetForItem(item: HTMLElement): number {
+    const viewportRect = viewportElement.getBoundingClientRect();
+    const itemRect = item.getBoundingClientRect();
+    return clampScrollLeft(viewportElement.scrollLeft + itemRect.left - viewportRect.left - viewportPaddingStart());
+  }
+
+  function itemTargets(): number[] {
+    return items.map((item) => targetForItem(item)).sort((left, right) => left - right);
+  }
+
+  function scrollBehavior(): ScrollBehavior {
+    return reducedMotion ? 'auto' : 'smooth';
+  }
+
+  function trackMockupInteraction(action: string): void {
+    trackEvent('project_mockup_interaction', {
+      project_title: slider.dataset.analyticsLabel,
+      mockup_action: action,
+    });
+  }
+
+  function scrollToLeft(left: number, action?: string): void {
+    if (!canSlide()) return;
+    viewportElement.scrollTo({ left: clampScrollLeft(left), behavior: scrollBehavior() });
+    if (action) trackMockupInteraction(action);
+  }
+
+  function stepSize(): number {
+    const firstItem = items[0];
+    const trackStyle = getComputedStyle(trackElement);
+    const gap = Number.parseFloat(trackStyle.columnGap) || 0;
+    const itemWidth = firstItem?.getBoundingClientRect().width || viewportElement.clientWidth;
+    return Math.max(1, Math.min(viewportElement.clientWidth * 0.86, itemWidth + gap));
+  }
+
+  function adjacentTarget(direction: -1 | 1): number {
+    const current = viewportElement.scrollLeft;
+    const targets = itemTargets();
+
+    if (direction > 0) {
+      return targets.find((target) => target > current + 8) ?? clampScrollLeft(current + stepSize());
+    }
+
+    for (let index = targets.length - 1; index >= 0; index -= 1) {
+      const target = targets[index];
+      if (target < current - 8) return target;
+    }
+
+    return clampScrollLeft(current - stepSize());
+  }
+
+  function scrollAdjacent(direction: -1 | 1, action: string): void {
+    scrollToLeft(adjacentTarget(direction), action);
+  }
+
+  function clickedMockupItem(event: PointerEvent): HTMLElement | null {
+    if (!(event.target instanceof Element)) return null;
+    const item = event.target.closest('[data-project-mockup-item]');
+    return item instanceof HTMLElement ? item : null;
+  }
+
+  function scrollFromClick(event: PointerEvent): void {
+    const viewportRect = viewportElement.getBoundingClientRect();
+    const clickX = event.clientX - viewportRect.left;
+    const edgeSize = Math.min(96, viewportRect.width * 0.24);
+    const item = clickedMockupItem(event);
+
+    if (item) {
+      const itemRect = item.getBoundingClientRect();
+      const itemTarget = targetForItem(item);
+
+      if (itemRect.right > viewportRect.right - edgeSize && clickX > viewportRect.width * 0.5) {
+        if (itemTarget > viewportElement.scrollLeft + 8) {
+          scrollToLeft(itemTarget, 'click_next');
+        } else {
+          scrollAdjacent(1, 'click_next');
+        }
+        return;
+      }
+
+      if (itemRect.left < viewportRect.left + edgeSize && clickX < viewportRect.width * 0.5) {
+        if (itemTarget < viewportElement.scrollLeft - 8) {
+          scrollToLeft(itemTarget, 'click_previous');
+        } else {
+          scrollAdjacent(-1, 'click_previous');
+        }
+        return;
+      }
+    }
+
+    if (clickX > viewportRect.width - edgeSize) {
+      scrollAdjacent(1, 'click_next');
+      return;
+    }
+
+    if (clickX < edgeSize) {
+      scrollAdjacent(-1, 'click_previous');
+    }
+  }
+
+  function clampAfterResize(): void {
+    if (resizeFrame) return;
+    resizeFrame = window.requestAnimationFrame(() => {
+      resizeFrame = 0;
+      viewportElement.scrollLeft = clampScrollLeft(viewportElement.scrollLeft);
+    });
+  }
+
+  viewportElement.addEventListener('pointerdown', (event) => {
+    if (!event.isPrimary || !canSlide() || (event.pointerType === 'mouse' && event.button !== 0)) return;
+
+    activePointerId = event.pointerId;
+    dragStartX = event.clientX;
+    dragDeltaX = 0;
+    startScrollLeft = viewportElement.scrollLeft;
+    hasDragged = false;
+    slider.classList.add('is-dragging');
+    viewportElement.setPointerCapture(event.pointerId);
+  });
+
+  viewportElement.addEventListener('pointermove', (event) => {
+    if (activePointerId !== event.pointerId) return;
+
+    dragDeltaX = event.clientX - dragStartX;
+    if (Math.abs(dragDeltaX) > dragThreshold) hasDragged = true;
+    if (!hasDragged) return;
+
+    event.preventDefault();
+    viewportElement.scrollLeft = clampScrollLeft(startScrollLeft - dragDeltaX);
+  });
+
+  function finishPointer(event: PointerEvent): void {
+    if (activePointerId !== event.pointerId) return;
+
+    if (viewportElement.hasPointerCapture(event.pointerId)) {
+      viewportElement.releasePointerCapture(event.pointerId);
+    }
+
+    activePointerId = null;
+    slider.classList.remove('is-dragging');
+
+    if (hasDragged) {
+      trackMockupInteraction('drag');
+      return;
+    }
+
+    scrollFromClick(event);
+  }
+
+  viewportElement.addEventListener('pointerup', finishPointer);
+  viewportElement.addEventListener('pointercancel', finishPointer);
+  viewportElement.addEventListener('keydown', (event) => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+
+    event.preventDefault();
+    scrollAdjacent(event.key === 'ArrowRight' ? 1 : -1, event.key === 'ArrowRight' ? 'key_next' : 'key_previous');
+  });
+  slider.addEventListener('dragstart', (event) => event.preventDefault());
+  window.addEventListener('resize', clampAfterResize);
+}
+
+for (const slider of document.querySelectorAll<HTMLElement>('[data-project-mockups]')) {
+  setupProjectMockupSlider(slider);
+}
+
 function scrollToElement(target: HTMLElement): void {
   if (lenis) {
     lenis.scrollTo(target);

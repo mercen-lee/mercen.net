@@ -6,21 +6,21 @@ import { Marked, Renderer } from 'marked';
 const ASSETS_ROOT = path.resolve(process.cwd(), 'assets');
 
 const curatedProjectTitles = [
-  'Amaze',
-  'BL Agent',
-  'Windows 11 for Galaxy Tab 6 Lite',
-  'Desktop Fushi',
   'Nextgen',
-  'Interactor',
+  'BL Agent',
   'WHOFA',
+  'Interactor',
   'Toongether',
-  'FlowKit',
-  'App Pilot',
-  'Allergist',
   'DodamDodam',
   'Love & Code',
-  'Story',
   'Allermi',
+  'Desktop Fushi',
+  'Windows 11 for Galaxy Tab 6 Lite',
+  'App Pilot',
+  'Allergist',
+  'FlowKit',
+  'Story',
+  'Amaze',
 ] as const;
 
 export type LinkItem = {
@@ -54,6 +54,7 @@ export type EducationItem = {
   id: string;
   index: number;
   name: string;
+  logoImage?: string;
   role?: string;
   period?: string;
   description?: string;
@@ -107,7 +108,7 @@ export type ProjectItem = {
   id: string;
   slug: string;
   sourcePath: string;
-  kind: 'team' | 'personal';
+  kind: ProjectKind;
   title: string;
   description?: string;
   descriptionHtml?: string;
@@ -124,8 +125,12 @@ export type ProjectItem = {
   htmlAfterProblemSolutions: string;
   problemSolutions: ProjectProblemSolution[];
   order: number;
+  logoImage?: string;
   mockupImage?: string;
+  mockupImages: string[];
 };
+
+export type ProjectKind = 'company' | 'team' | 'personal';
 
 export type ProjectMetaItem = {
   kind: 'period' | 'team' | 'award';
@@ -242,6 +247,7 @@ export async function loadPortfolio(): Promise<PortfolioData> {
       id: `education-${index}`,
       index,
       name: requiredString(item.name, `educations.json#/${index}.name`),
+      logoImage: asAssetImagePath(item.logo_image, 'educations.json'),
       role: asString(item.role),
       period: asString(item.period),
       description: asString(item.description),
@@ -328,7 +334,7 @@ export async function loadPortfolio(): Promise<PortfolioData> {
         id: currentId,
         slug,
         sourcePath: project.sourcePath,
-        kind: project.sourcePath.includes('/team/') ? 'team' : 'personal',
+        kind: projectKind(project.data, project.sourcePath, errors),
         title: requiredString(project.data.title, `${project.sourcePath}.title`),
         description: asString(project.data.description),
         descriptionHtml: renderInlineIfPresent(asString(project.data.description), project.sourcePath, registry, errors),
@@ -348,7 +354,11 @@ export async function loadPortfolio(): Promise<PortfolioData> {
           solutionHtml: renderMarkdownInline(item.solution, project.sourcePath, registry, errors),
         })),
         order: projectOrder(requiredString(project.data.title, `${project.sourcePath}.title`)),
+        logoImage: asAssetImagePath(project.data.logo_image, project.sourcePath),
         mockupImage: asString(project.data.mockup_image),
+        mockupImages: [asString(project.data.mockup_image), ...asStringArray(project.data.mockup_images)].filter(
+          (item): item is string => Boolean(item),
+        ),
       };
     })
     .sort((a, b) => a.order - b.order || a.title.localeCompare(b.title));
@@ -596,7 +606,7 @@ function validateStructuredReferences(
     const parsed = parseReference(ref, sourcePath);
     if (!parsed) continue;
 
-    if (parsed.normalizedPath.startsWith('images/')) {
+    if (parsed.normalizedPath.startsWith('images/') || isImageAssetPath(parsed.normalizedPath)) {
       continue;
     }
 
@@ -725,6 +735,14 @@ function normalizeAssetPath(value: string): string {
     .replace(/^\.\//, '');
 }
 
+function asAssetImagePath(value: unknown, sourcePath: string): string | undefined {
+  const rawValue = asString(value);
+  if (!rawValue) return undefined;
+
+  const reference = parseReference(rawValue, sourcePath);
+  return normalizeAssetPath(reference?.normalizedPath ?? rawValue);
+}
+
 function createStackResolver(stacks: StackBadge[]): Map<string, StackBadge> {
   const resolver = new Map<string, StackBadge>();
 
@@ -836,6 +854,21 @@ function projectOrder(title: string): number {
   return index === -1 ? curatedProjectTitles.length + 1 : index;
 }
 
+function projectKind(data: Record<string, unknown>, sourcePath: string, errors: string[]): ProjectKind {
+  const explicitKind = asString(data.project_group);
+
+  if (explicitKind) {
+    if (explicitKind === 'company' || explicitKind === 'team' || explicitKind === 'personal') {
+      return explicitKind;
+    }
+
+    errors.push(`${sourcePath}.project_group must be one of company, team, personal`);
+  }
+
+  if (asString(data.career_ref)) return 'company';
+  return sourcePath.includes('/team/') ? 'team' : 'personal';
+}
+
 function slugify(value: string): string {
   return value
     .normalize('NFKD')
@@ -878,6 +911,10 @@ function requiredString(value: unknown, field: string): string {
 
 function isExternalHref(href: string): boolean {
   return /^(https?:|mailto:)/.test(href);
+}
+
+function isImageAssetPath(value: string): boolean {
+  return /\.(?:avif|gif|jpe?g|png|webp)$/i.test(value);
 }
 
 function escapeHtml(value: string): string {

@@ -1,6 +1,10 @@
 ---
 title: Love & Code
 description: 새내기 개발자들의 **첫 협업 경험**을 담은 비주얼 노벨 게임
+logo_image: ../../images/projects/loveandcode.webp
+mockup_images:
+  - ./loveandcode/loveandcode-1.webp
+  - ./loveandcode/loveandcode-2.webp
 period: 2024.04 ~ 2024.09
 source_code: 소스 비공개 · 요청 시 프로젝트 코드 공유 가능
 award: SK Smarteen App+ Challenge 2024 우수상

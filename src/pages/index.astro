@@ -63,9 +63,16 @@ const stackIconModules = import.meta.glob<string>('../../assets/icons/tech-stack
   query: '?url',
 });
 
-const rasterImageModules = import.meta.glob<{ default: ImageMetadata }>('../../assets/projects/**/*.{jpg,jpeg,png}', {
+const rasterImageModules = import.meta.glob<{ default: ImageMetadata }>('../../assets/projects/**/*.{jpg,jpeg,png,webp,avif}', {
   eager: true,
 });
+
+const logoImageModules = import.meta.glob<{ default: ImageMetadata }>(
+  '../../assets/images/{education,projects}/*.{jpg,jpeg,png,webp,avif}',
+  {
+    eager: true,
+  },
+);
 
 const personalImageModules = import.meta.glob<{ default: ImageMetadata }>(
   '../../assets/images/personal/*.{jpg,jpeg,png,webp,avif}',
@@ -80,6 +87,10 @@ const stackIconUrls = new Map(
 
 const rasterImages = new Map(
   Object.entries(rasterImageModules).map(([modulePath, module]) => [normalizeAssetModulePath(modulePath), module.default]),
+);
+
+const logoImages = new Map(
+  Object.entries(logoImageModules).map(([modulePath, module]) => [normalizeAssetModulePath(modulePath), module.default]),
 );
 
 const personalGalleryItems = [
@@ -108,6 +119,24 @@ const personalGalleryImages = personalGalleryItems
   }))
   .filter((item): item is typeof item & { image: ImageMetadata } => Boolean(item.image));
 
+const projectGroups = [
+  {
+    kind: 'company',
+    title: '회사 프로젝트',
+    projects: portfolio.projects.filter((project) => project.kind === 'company'),
+  },
+  {
+    kind: 'team',
+    title: '팀 프로젝트',
+    projects: portfolio.projects.filter((project) => project.kind === 'team'),
+  },
+  {
+    kind: 'personal',
+    title: '개인 프로젝트',
+    projects: portfolio.projects.filter((project) => project.kind === 'personal'),
+  },
+].filter((group) => group.projects.length > 0);
+
 const navItems = [
   { href: '#intro', label: '소개' },
   { href: '#education', label: '학력' },
@@ -121,16 +150,28 @@ function normalizeAssetModulePath(modulePath: string): string {
   return modulePath.replace('../../assets/', '').replace(/^\.\//, '');
 }
 
-function resolveMockupImage(project: ProjectItem): ImageMetadata | undefined {
-  if (!project.mockupImage) return undefined;
-  if (/^(https?:|\/)/.test(project.mockupImage)) return undefined;
+function resolveMockupImages(project: ProjectItem): ImageMetadata[] {
+  return project.mockupImages
+    .map((mockupImage) => resolveProjectImage(project, mockupImage))
+    .filter((image): image is ImageMetadata => Boolean(image));
+}
+
+function resolveProjectImage(project: ProjectItem, imagePath: string): ImageMetadata | undefined {
+  if (/^(https?:|\/)/.test(imagePath)) return undefined;
 
   const sourceDir = path.posix.dirname(project.sourcePath);
   const normalized = path.posix
-    .normalize(path.posix.join(sourceDir === '.' ? '' : sourceDir, project.mockupImage))
+    .normalize(path.posix.join(sourceDir === '.' ? '' : sourceDir, imagePath))
     .replace(/^\.\//, '');
 
   return rasterImages.get(normalized);
+}
+
+function resolveLogoImage(item: { logoImage?: string }): ImageMetadata | undefined {
+  if (!item.logoImage) return undefined;
+  if (/^(https?:|\/)/.test(item.logoImage)) return undefined;
+
+  return logoImages.get(item.logoImage);
 }
 
 function emailHref(value: string): string {
@@ -298,24 +339,40 @@ function emailHref(value: string): string {
           <h2>학력</h2>
         </div>
         <div class="timeline">
-          {portfolio.educations.map((education) => (
-            <article id={education.id} class="timeline-card reveal" data-highlight-target>
-              <div class="timeline-card__meta">
-                <span>{education.period}</span>
-                <span>{education.role}</span>
-              </div>
-              <div class="record-title">
-                <img class="record-icon" src={iconForEducation(education).src} alt="" loading="lazy" decoding="async" />
-                <h3>{education.name}</h3>
-              </div>
-              {education.descriptionHtml && <p set:html={education.descriptionHtml} />}
-              {education.highlightsHtml && (
-                <ul>
-                  {education.highlightsHtml.map((highlight) => <li set:html={highlight} />)}
-                </ul>
-              )}
-            </article>
-          ))}
+          {portfolio.educations.map((education) => {
+            const logo = resolveLogoImage(education);
+
+            return (
+              <article id={education.id} class="timeline-card reveal" data-highlight-target>
+                <div class="timeline-card__meta">
+                  <span>{education.period}</span>
+                  <span>{education.role}</span>
+                </div>
+                <div class="record-title">
+                  {logo ? (
+                    <Image
+                      class="record-logo"
+                      src={logo}
+                      widths={[48, 64, 96]}
+                      sizes="32px"
+                      alt={`${education.name} 로고`}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  ) : (
+                    <img class="record-icon" src={iconForEducation(education).src} alt="" loading="lazy" decoding="async" />
+                  )}
+                  <h3>{education.name}</h3>
+                </div>
+                {education.descriptionHtml && <p set:html={education.descriptionHtml} />}
+                {education.highlightsHtml && (
+                  <ul>
+                    {education.highlightsHtml.map((highlight) => <li set:html={highlight} />)}
+                  </ul>
+                )}
+              </article>
+            );
+          })}
         </div>
       </section>
 
@@ -398,10 +455,18 @@ function emailHref(value: string): string {
         <div class="section-heading reveal">
           <h2>프로젝트</h2>
         </div>
-        <div class="project-stack">
-          {portfolio.projects.map((project) => {
-            const mockup = resolveMockupImage(project);
-            return (
+        <div class="project-groups">
+          {projectGroups.map((group) => (
+            <section class="project-group" aria-labelledby={`project-group-${group.kind}`}>
+              <div class="project-group__heading reveal">
+                <h3 id={`project-group-${group.kind}`}>{group.title}</h3>
+                <span>{group.projects.length}개</span>
+              </div>
+              <div class="project-stack">
+                {group.projects.map((project) => {
+                  const mockups = resolveMockupImages(project);
+                  const logo = resolveLogoImage(project);
+                  return (
               <details
                 id={project.id}
                 class="project-record t-resize reveal"
@@ -414,7 +479,20 @@ function emailHref(value: string): string {
               >
                 <summary class="project-record__summary">
                   <div class="project-record__summary-copy">
-                    <h3>{project.title}</h3>
+                    <div class="record-title project-record__title">
+                      {logo && (
+                        <Image
+                          class="record-logo"
+                          src={logo}
+                          widths={[48, 64, 96]}
+                          sizes="32px"
+                          alt={`${project.title} 로고`}
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      )}
+                      <h3>{project.title}</h3>
+                    </div>
                     {project.descriptionHtml && <p set:html={project.descriptionHtml} />}
                     {project.meta.length > 0 && (
                       <div class="project-record__meta">
@@ -449,12 +527,6 @@ function emailHref(value: string): string {
                 </summary>
 
                 <div class="project-record__body">
-                  {mockup && (
-                    <div class="project-mockup">
-                      <Image src={mockup} format="webp" alt={`${project.title} 목업 이미지`} loading="lazy" decoding="async" />
-                    </div>
-                  )}
-
                   <StackBadges
                     stacks={project.stacks}
                     iconUrls={stackIconUrls}
@@ -486,6 +558,34 @@ function emailHref(value: string): string {
                     </aside>
                   )}
                   <div class="markdown-body project-content">
+                    {mockups.length > 0 && (
+                      <div
+                        class="project-mockups"
+                        aria-label={`${project.title} 스크린샷과 목업`}
+                        data-project-mockups
+                        data-analytics-label={project.title}
+                      >
+                        <div class="project-mockups__viewport" data-project-mockup-viewport tabindex="0">
+                          <div class="project-mockups__track" data-project-mockup-track>
+                            {mockups.map((mockup, index) => (
+                              <div
+                                class="project-mockup"
+                                data-project-mockup-item
+                                style={`--project-mockup-ratio: ${mockup.width} / ${mockup.height};`}
+                              >
+                                <Image
+                                  src={mockup}
+                                  format="webp"
+                                  alt={`${project.title} 스크린샷 ${index + 1}`}
+                                  loading="lazy"
+                                  decoding="async"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     {project.htmlBeforeProblemSolutions && (
                       <div class="project-content__segment" set:html={project.htmlBeforeProblemSolutions} />
                     )}
@@ -495,9 +595,12 @@ function emailHref(value: string): string {
                     )}
                   </div>
                 </div>
-              </details>
-            );
-          })}
+                    </details>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
         </div>
       </section>
 

@@ -1,6 +1,7 @@
 ---
 title: Nextgen
 description: 차세대 크리에이터 육성 **아카데미 플랫폼**
+logo_image: ../../images/projects/nextgen.webp
 period: 2026.03 ~ 2026.04
 team: 주식회사 넥스트젠코퍼레이션
 source_code: 소스 비공개 · 회사 정책에 따라 공개 제한

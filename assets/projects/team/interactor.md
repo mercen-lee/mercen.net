@@ -1,6 +1,7 @@
 ---
 title: Interactor
 description: SaaS 자동화 제품의 **Connector UI와 datatype 설명 구조 개선**
+logo_image: ../../images/projects/interactor.webp
 period: 2024.06 ~ 2025.02
 team: Pulzze Systems, Inc.
 source_code: 소스 비공개 · 사내 제품 코드베이스로 공개 제한

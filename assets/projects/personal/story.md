@@ -1,6 +1,9 @@
 ---
 title: Story
 description: XML 기반 **비주얼 노벨 스토리 포맷과 파서, StoryMaker GUI 편집기**
+logo_image: ../../images/projects/story.webp
+mockup_images:
+  - ./story/story.webp
 period: 2024.07 ~ 2025.12
 source_code: 소스 공개 · 패키지와 편집기 코드 확인 가능
 related_projects:

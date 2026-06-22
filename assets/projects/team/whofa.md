@@ -1,6 +1,7 @@
 ---
 title: WHOFA
 description: 팬과 아티스트 경험을 연결하는 **Flutter 기반 모바일/웹 앱**
+logo_image: ../../images/projects/whofa.webp
 period: 2025.09 ~ 2026.02
 team: 주식회사 후파
 source_code: 소스 비공개 · 회사 관리 코드베이스로 공개 제한

@@ -1,6 +1,7 @@
 ---
 title: FlowKit
 description: SwiftUI를 위한 **push/pop 기반 Navigation 라이브러리**
+logo_image: ../../images/projects/flowkit.webp
 period: 2023.12 ~ 2025.12
 source_code: 소스 공개 · Swift Package 코드 확인 가능
 related_projects:

@@ -1,7 +1,9 @@
 ---
 title: BL Agent
 description: 포워딩 업무에서 **B/L PDF 문서의 주요 정보를 추출하고 기존 XLS 양식으로 저장**하는 데스크톱 앱
+logo_image: ../../images/projects/bl-agent.webp
 period: 2026.06 ~
+project_group: company
 source_code: 소스 비공개 · 외주 계약 범위에 따라 공개 제한
 vibe_coded: true
 tech_stacks:

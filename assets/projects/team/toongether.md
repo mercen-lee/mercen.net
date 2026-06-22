@@ -1,6 +1,13 @@
 ---
 title: Toongether
 description: 작가의 **플랫폼 의존도를 줄이는** 웹툰 자유 연재 서비스
+logo_image: ../../images/projects/toongether.webp
+mockup_images:
+  - ./toongether/toongether-1.webp
+  - ./toongether/toongether-2.webp
+  - ./toongether/toongether-3.webp
+  - ./toongether/toongether-4.webp
+  - ./toongether/toongether-5.webp
 period: 2022.09 ~ 2024.09
 team: Progress
 source_code: 현재 소스 비공개 · 요청 시 공유 가능, 레거시 버전은 GitHub 공개

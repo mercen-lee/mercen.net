@@ -183,6 +183,7 @@ select {
 
 .ui-icon,
 .record-icon,
+.record-logo,
 .list-icon,
 .license-icon,
 .reference-chip__icon {
@@ -198,6 +199,7 @@ select {
 }
 
 .record-icon,
+.record-logo,
 .list-icon,
 .license-icon {
   width: 32px;
@@ -205,6 +207,11 @@ select {
   padding: 7px;
   border: 1px solid var(--line);
   background: var(--surface);
+}
+
+.record-logo {
+  padding: 0;
+  background: transparent;
 }
 
 .list-icon {
@@ -636,6 +643,39 @@ h3 {
   gap: 14px;
 }
 
+.project-groups {
+  display: grid;
+  gap: 34px;
+}
+
+.project-group {
+  display: grid;
+  gap: 12px;
+}
+
+.project-group__heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.project-group__heading h3 {
+  min-width: 0;
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.project-group__heading span {
+  flex: 0 0 auto;
+  color: var(--faint);
+  font-size: 0.72rem;
+}
+
 .timeline-card,
 .career-card,
 .project-record,
@@ -1037,20 +1077,69 @@ h3 {
 
 .career-card__body,
 .project-record__body {
-  padding: 0 clamp(18px, 3vw, 28px) clamp(18px, 3vw, 28px);
+  --record-body-padding-x: clamp(18px, 3vw, 28px);
+  padding: 0 var(--record-body-padding-x) clamp(18px, 3vw, 28px);
   animation: project-record-body-in 220ms ease both;
 }
 
+.project-mockups {
+  --project-mockup-height: clamp(198px, 25vw, 264px);
+  --project-mockup-gap: 10px;
+  margin: 0 calc(var(--record-body-padding-x) * -1) 20px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.project-mockups__viewport {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding-inline: var(--record-body-padding-x);
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.project-mockups__viewport:focus-visible {
+  outline: 1px solid var(--text);
+  outline-offset: 4px;
+}
+
+.project-mockups__viewport::-webkit-scrollbar {
+  display: none;
+}
+
+.project-mockups.is-dragging .project-mockups__viewport {
+  cursor: grabbing;
+}
+
+.project-mockups__track {
+  display: flex;
+  gap: var(--project-mockup-gap);
+  width: max-content;
+}
+
 .project-mockup {
-  margin-top: 20px;
-  border: 1px solid var(--line);
-  background: var(--surface);
+  flex: 0 0 auto;
+  height: var(--project-mockup-height);
+  aspect-ratio: var(--project-mockup-ratio, 1 / 1);
+}
+
+.project-mockup picture,
+.project-mockup img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .project-mockup img {
-  width: 100%;
-  max-height: 600px;
-  object-fit: contain;
+  pointer-events: none;
 }
 
 .markdown-body {
@@ -1060,6 +1149,10 @@ h3 {
 }
 
 .markdown-body h2:first-child {
+  margin-top: 0;
+}
+
+.project-mockups + .project-content__segment h2:first-child {
   margin-top: 0;
 }
 
@@ -1381,6 +1474,10 @@ h3 {
     --gallery-item-height: 218px;
     --gallery-side-peek: max(0px, calc(50% - var(--gallery-item-half-width)));
     --gallery-fade-size: 34px;
+  }
+
+  .project-mockups {
+    --project-mockup-height: 218px;
   }
 
   h1 {

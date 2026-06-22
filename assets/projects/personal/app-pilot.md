@@ -1,6 +1,11 @@
 ---
 title: App Pilot
 description: 터치와 드래그만으로 **실제 iOS 앱을 만들 수 있는** SwiftUI 기반 WYSIWYG 노코드 앱 개발 서비스
+logo_image: ../../images/projects/app-pilot.webp
+mockup_images:
+  - ./app-pilot/app-pilot-1.webp
+  - ./app-pilot/app-pilot-2.webp
+  - ./app-pilot/app-pilot-3.webp
 period: 2024.02
 source_code: 소스 공개 · Swift Playgrounds 프로젝트 코드 확인 가능
 award: Apple WWDC Swift Student Challenge 2024 우승

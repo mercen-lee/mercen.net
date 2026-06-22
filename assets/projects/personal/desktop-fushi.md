@@ -1,9 +1,17 @@
 ---
 title: Desktop Fushi
 description: "'초 가구야 공주'의 마스코트 캐릭터 'FUSHI'를 **바탕화면 펫**으로 만드는 프로젝트"
+logo_image: ../../images/projects/desktop-fushi.webp
+mockup_images:
+  - ./desktop-fushi/desktop-fushi.webp
 period: 2026.06 ~
-source_code: 소스 비공개 · 초기 개발 중이며, 요청 시 공유 가능
+source_code: 소스 공개 · GitHub에서 프로젝트 코드 확인 가능
 vibe_coded: true
+links:
+  - label: 소스 코드
+    url: https://github.com/mercen-lee/desktop-fushi
+  - label: 홈페이지
+    url: https://desktopfushi.mercen.net
 tech_stacks:
   - Rust
   - Direct2D

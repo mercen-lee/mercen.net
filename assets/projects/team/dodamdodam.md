@@ -1,6 +1,13 @@
 ---
 title: DodamDodam
 description: 학생과 선생님의 **학교생활을 편리하게 만드는** 교내 스마트 스쿨 서비스
+logo_image: ../../images/projects/dodamdodam.webp
+mockup_images:
+  - ./dodamdodam/dodamdodam-1.webp
+  - ./dodamdodam/dodamdodam-2.webp
+  - ./dodamdodam/dodamdodam-3.webp
+  - ./dodamdodam/dodamdodam-4.webp
+  - ./dodamdodam/dodamdodam-5.webp
 period: 2023.03 ~ 2024.04
 team: B1ND
 source_code: 소스 공개 · iOS 앱과 일부 서버 repo 확인 가능

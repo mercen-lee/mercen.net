@@ -1,6 +1,11 @@
 ---
 title: Allergist
 description: 사용자의 알레르기 정보에 맞춰 **식품 알레르기 유발물질을 확인**하는 iOS 서비스
+logo_image: ../../images/projects/allergist.webp
+mockup_images:
+  - ./allergist/allergist-1.webp
+  - ./allergist/allergist-2.webp
+  - ./allergist/allergist-3.webp
 period: 2023.04
 source_code: 소스 공개 · GitHub에서 iOS 앱 코드 확인 가능
 award: Apple WWDC Swift Student Challenge 2023 우승

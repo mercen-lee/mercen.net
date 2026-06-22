@@ -98,7 +98,7 @@ export function iconForLink(link: LinkItem): IconDescriptor {
   if (includesAny(text, ['pub.dev', 'Pub'])) return icons.package;
   if (includesAny(text, ['기사'])) return icons.book;
   if (includesAny(text, ['자료'])) return icons.file;
-  if (includesAny(text, ['웹 서비스'])) return icons.globe;
+  if (includesAny(text, ['웹 서비스', '웹사이트', '홈페이지'])) return icons.globe;
   if (includesAny(text, ['회고록', 'blog.'])) return icons.book;
   return icons.external;
 }

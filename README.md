@@ -57,6 +57,10 @@ pnpm run preview  # 빌드 결과 로컬 미리보기
 
 Markdown 본문과 JSON 문자열에서는 `./career.json#/0`, `./awards.json#/2`처럼 같은 `assets/` 기준 경로와 JSON Pointer를 사용해 항목을 참조할 수 있습니다. 참조 대상이 잘못되면 콘텐츠 로딩 과정에서 오류가 발생하도록 되어 있습니다.
 
+학력 JSON과 프로젝트 Markdown frontmatter의 `logo_image`에는 `./images/education/dgsw.webp`, `../../images/projects/app-pilot.webp`처럼 `assets/` 안의 이미지 상대 경로를 넣어 홈페이지 로고를 데이터로 연결합니다.
+
+프로젝트 Markdown frontmatter의 `mockup_images`에는 `./app-pilot/app-pilot-1.webp`처럼 해당 프로젝트 Markdown 파일 기준 상대 경로를 배열로 넣어 상세 영역의 스크린샷/목업을 연결합니다.
+
 ## Build Output
 
 빌드 결과물은 `dist/`에 생성됩니다. `dist/`, `.astro/`, `node_modules/`는 재생성 가능한 산출물이므로 Git에 포함하지 않습니다.
