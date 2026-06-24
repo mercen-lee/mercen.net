@@ -799,7 +799,7 @@ function setupProjectMockupSlider(slider: HTMLElement): void {
   }
 
   viewportElement.addEventListener('pointerdown', (event) => {
-    if (!event.isPrimary || !canSlide() || (event.pointerType === 'mouse' && event.button !== 0)) return;
+    if (!event.isPrimary || event.pointerType !== 'mouse' || event.button !== 0 || !canSlide()) return;
 
     activePointerId = event.pointerId;
     dragStartX = event.clientX;

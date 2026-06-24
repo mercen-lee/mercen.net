@@ -621,7 +621,12 @@ function emailHref(value: string): string {
                         data-project-mockups
                         data-analytics-label={project.title}
                       >
-                        <div class="project-mockups__viewport" data-project-mockup-viewport tabindex="0">
+                        <div
+                          class="project-mockups__viewport"
+                          data-project-mockup-viewport
+                          data-lenis-prevent-touch
+                          tabindex="0"
+                        >
                           <div class="project-mockups__track" data-project-mockup-track>
                             {mockups.map((mockup, index) => (
                               <div

@@ -1158,7 +1158,7 @@ h3 {
   overscroll-behavior-x: contain;
   scrollbar-width: none;
   cursor: grab;
-  touch-action: pan-y;
+  touch-action: auto;
   user-select: none;
   -webkit-overflow-scrolling: touch;
 }
