@@ -137,6 +137,36 @@ const projectGroups = [
   },
 ].filter((group) => group.projects.length > 0);
 
+const swiftChallengeWins = portfolio.awards.filter(
+  (award) => award.name === 'Apple WWDC Swift Student Challenge' && award.level === '우승',
+);
+const latestSwiftChallengeWin = swiftChallengeWins[0];
+const swiftChallengeAchievement =
+  swiftChallengeWins.length >= 2 && latestSwiftChallengeWin
+    ? {
+        href: `#${latestSwiftChallengeWin.id}`,
+        label: `Apple WWDC Swift Student Challenge ${swiftChallengeWins.length}회 연속 우승`,
+        icon: iconForAward(latestSwiftChallengeWin),
+      }
+    : undefined;
+const isefEducation = portfolio.educations.find((education) =>
+  education.highlights?.some((highlight) => highlight.includes('ISEF') || highlight.includes('국제과학기술경진대회')),
+);
+const giftedEducation = portfolio.educations.find((education) => education.name === '대구교육대학교 정보영재교육원');
+const profileAchievements = [
+  {
+    href: giftedEducation ? `#${giftedEducation.id}` : '#education',
+    label: '대구교육대학교 정보영재교육원 수료',
+    icon: iconForEducation({ name: '대구교육대학교 정보영재교육원' }),
+  },
+  {
+    href: isefEducation ? `#${isefEducation.id}` : '#education',
+    label: '국제과학기술경진대회 임베디드시스템 부문 Finalist',
+    icon: iconForAward({ name: '국제과학기술경진대회', level: 'Finalist' }),
+  },
+  swiftChallengeAchievement,
+].filter((achievement): achievement is NonNullable<typeof swiftChallengeAchievement> => Boolean(achievement));
+
 const navItems = [
   { href: '#intro', label: '소개' },
   { href: '#education', label: '학력' },
@@ -243,7 +273,33 @@ function emailHref(value: string): string {
             <Image src={profileImage} format="webp" alt={`${portfolio.main.name} 프로필 사진`} loading="eager" decoding="async" />
           </div>
           <div class="profile-identity">
-            <h1>{portfolio.main.name}</h1>
+            <h1>
+              <span>{portfolio.main.name}</span>
+              <span class="profile-name__latin" lang="en">Seokho Lee</span>
+            </h1>
+            {profileAchievements.length > 0 && (
+              <div class="hero-achievements" aria-label="주요 성과">
+                {profileAchievements.map((achievement) => (
+                  <a
+                    class="hero-achievement"
+                    href={achievement.href}
+                    data-reference-link
+                    data-analytics-link="intro-achievement"
+                    data-analytics-label={achievement.label}
+                    data-analytics-target={achievement.href}
+                  >
+                    <img
+                      class="hero-achievement__icon"
+                      src={achievement.icon.src}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    <span>{achievement.label}</span>
+                  </a>
+                ))}
+              </div>
+            )}
             <div class="profile-links" aria-label="연락처와 링크">
               {portfolio.main.email && (
                 <a

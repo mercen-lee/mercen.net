@@ -429,6 +429,46 @@ h3 {
   box-shadow: 0 14px 44px rgba(0, 0, 0, 0.2);
 }
 
+.hero-achievements {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  max-width: 100%;
+  margin: 8px 0 0;
+}
+
+.hero-achievement {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0;
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
+  overflow-wrap: break-word;
+  transition: color 160ms ease;
+}
+
+.hero-achievement__icon {
+  width: 1em;
+  height: 1em;
+  flex: 0 0 auto;
+  object-fit: contain;
+  opacity: 0.86;
+  transform: translateY(-0.03em);
+}
+
+.hero-achievement span {
+  display: inline-block;
+  min-width: 0;
+  overflow-wrap: break-word;
+  transform: translateY(0.04em);
+}
+
 .hero__prose p:last-child {
   margin-bottom: 0;
 }
@@ -436,7 +476,7 @@ h3 {
 .profile-links {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 8px;
   margin-top: 18px;
 }
@@ -486,7 +526,11 @@ h3 {
 
 .hero__profile {
   display: grid;
-  justify-items: center;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  justify-content: center;
+  justify-items: start;
+  gap: clamp(28px, 5vw, 48px);
   width: 100%;
 }
 
@@ -505,13 +549,27 @@ h3 {
 
 .profile-identity {
   width: 100%;
-  text-align: center;
+  text-align: left;
 }
 
 .profile-identity h1 {
-  margin: 20px 0 0;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: 10px;
+  margin: 0;
   font-size: clamp(2.2rem, 5vw, 4.2rem);
   line-height: 1;
+}
+
+.profile-name__latin {
+  color: var(--muted);
+  font-size: 0.45em;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  word-spacing: 0;
 }
 
 .profile-frame picture {
@@ -1335,6 +1393,14 @@ h3 {
     color: var(--text);
   }
 
+  .hero-achievement:hover {
+    color: var(--muted);
+  }
+
+  .hero-achievement:hover .hero-achievement__icon {
+    opacity: 1;
+  }
+
   .career-card:has(> .career-card__summary:hover),
   .project-record:has(> .project-record__summary:hover) {
     border-color: var(--interactive-line);
@@ -1404,17 +1470,42 @@ h3 {
     --content: min(680px, calc(100vw - 36px));
   }
 
-  .hero,
   .record-header {
     grid-template-columns: 1fr;
   }
 
   .hero {
     min-height: auto;
+    gap: 34px;
+  }
+
+  .hero__profile {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 24px;
+  }
+
+  .profile-identity h1 {
+    font-size: clamp(2rem, 5.8vw, 3.1rem);
+  }
+
+  .hero-achievements {
+    gap: 7px;
+  }
+
+  .profile-links {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: min(100%, 440px);
+  }
+
+  .profile-links > a,
+  .profile-links > span {
+    justify-content: flex-start;
+    width: 100%;
   }
 
   .profile-frame {
-    width: clamp(140px, 26vw, 190px);
+    width: clamp(132px, 21vw, 168px);
   }
 
   .profile-frame img {
@@ -1424,6 +1515,46 @@ h3 {
   .record-role {
     justify-items: start;
     text-align: left;
+  }
+}
+
+@media (max-width: 720px) {
+  .hero {
+    gap: 30px;
+  }
+
+  .hero__profile {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 16px;
+  }
+
+  .profile-identity {
+    max-width: 520px;
+    text-align: center;
+  }
+
+  .profile-identity h1 {
+    justify-content: center;
+  }
+
+  .hero-achievements {
+    justify-items: center;
+    width: min(100%, 460px);
+    margin-right: auto;
+    margin-left: auto;
+    text-align: center;
+  }
+
+  .hero-achievement {
+    justify-content: center;
+    width: fit-content;
+  }
+
+  .profile-links {
+    width: min(100%, 430px);
+    margin-right: auto;
+    margin-left: auto;
   }
 }
 
@@ -1450,20 +1581,17 @@ h3 {
   }
 
   .profile-links {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    width: min(100%, 360px);
-    margin-right: auto;
-    margin-left: auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: min(100%, 390px);
   }
 
   .profile-links > a,
   .profile-links > span {
-    justify-content: center;
+    justify-content: flex-start;
     width: 100%;
     padding-right: 8px;
     padding-left: 8px;
-    text-align: center;
+    text-align: left;
   }
 
   .personal-gallery {
@@ -1525,6 +1653,19 @@ h3 {
   .problem-solution-cell + .problem-solution-cell {
     border-top: 1px solid var(--line);
     border-left: 0;
+  }
+}
+
+@media (max-width: 430px) {
+  .profile-links {
+    grid-template-columns: minmax(0, 1fr);
+    width: min(100%, 340px);
+  }
+
+  .profile-links > a,
+  .profile-links > span {
+    justify-content: center;
+    text-align: center;
   }
 }
 
