@@ -4,8 +4,8 @@ import { generateResumePdf } from '../lib/resume-pdf';
 export const prerender = true;
 
 export async function GET(): Promise<Response> {
-  const portfolio = await loadPortfolio();
-  const pdf = await generateResumePdf(portfolio);
+  const portfolio = await loadPortfolio('ko');
+  const pdf = await generateResumePdf(portfolio, 'ko');
 
   return new Response(new Uint8Array(pdf), {
     headers: {

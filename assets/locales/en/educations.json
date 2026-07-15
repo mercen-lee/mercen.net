@@ -1,0 +1,27 @@
+[
+  {
+    "type": "education",
+    "name": "Gifted Institute for Information Technology, Daegu National University of Education",
+    "logo_image": "./images/education/dnue.webp",
+    "role": "Completed Advanced Program",
+    "period": "2017.02 ~ 2018.10",
+    "description": "Studied the fundamentals of development through LEGO Mindstorms, **C, Python, App Inventor**, and related coursework.",
+    "highlights": [
+      "Advanced to and completed the intensive program after finishing the **foundational course**."
+    ]
+  },
+  {
+    "type": "education",
+    "name": "Daegu Software Meister High School",
+    "logo_image": "./images/education/dgsw.webp",
+    "role": "Department of AI Software",
+    "period": "2022.03 ~ 2025.02",
+    "description": "Studied software engineering topics including **C, Java, data structures, and computer systems**, while participating in **production service development projects**.",
+    "highlights": [
+      "Selected by both the school and the regional education office as a **nominee for the Talent Award of Korea**.",
+      "Selected for the **Korean delegation to ISEF 2022** and named a **Finalist in the Embedded Systems category**.",
+      "Presented iOS development and project experience at school development sessions, including the **B1CODE Conference**.",
+      "Served as the leader of the school service development team **Progress**, planning, developing, and deploying the [**Toongether project**](./projects/team/toongether.md)."
+    ]
+  }
+]

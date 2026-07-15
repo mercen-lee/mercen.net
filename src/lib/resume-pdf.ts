@@ -8,6 +8,7 @@ import type {
   PortfolioData,
   ProjectItem,
 } from './content';
+import { getUi, type Locale } from './i18n';
 
 const require = createRequire(import.meta.url);
 const SVGtoPDF = require('svg-to-pdfkit') as (
@@ -103,7 +104,9 @@ type RichSegment = {
   text: string;
 };
 
-export async function generateResumePdf(portfolio: PortfolioData): Promise<Buffer> {
+export async function generateResumePdf(portfolio: PortfolioData, locale: Locale = 'ko'): Promise<Buffer> {
+  const resumeUi = getUi(locale).resume;
+
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({
       autoFirstPage: false,
@@ -111,9 +114,9 @@ export async function generateResumePdf(portfolio: PortfolioData): Promise<Buffe
       margin: 0,
       size: 'A4',
       info: {
-        Title: `${portfolio.main.name} Resume`,
+        Title: `${portfolio.main.name} ${resumeUi.documentLabel}`,
         Author: portfolio.main.name,
-        Subject: 'Software Developer Resume',
+        Subject: `${resumeUi.jobTitle} ${resumeUi.documentLabel}`,
         Creator: 'mercen.net',
       },
     });
@@ -126,7 +129,7 @@ export async function generateResumePdf(portfolio: PortfolioData): Promise<Buffe
     try {
       registerFonts(doc);
       addPage(doc);
-      drawResume(doc, portfolio);
+      drawResume(doc, portfolio, locale);
       drawPageNumbers(doc);
       doc.end();
     } catch (error) {
@@ -145,15 +148,16 @@ function registerFonts(doc: PDFKit.PDFDocument): void {
   }
 }
 
-function drawResume(doc: PDFKit.PDFDocument, portfolio: PortfolioData): void {
+function drawResume(doc: PDFKit.PDFDocument, portfolio: PortfolioData, locale: Locale): void {
   const cursor: Cursor = { y: PAGE_MARGIN_TOP };
+  const resumeUi = getUi(locale).resume;
 
-  drawHeader(doc, cursor, portfolio);
+  drawHeader(doc, cursor, portfolio, resumeUi.jobTitle);
 
-  drawSectionHeading(doc, cursor, '주요 개발 스택', { minFollowingHeight: 54 });
+  drawSectionHeading(doc, cursor, resumeUi.sections.primaryStacks, { minFollowingHeight: 54 });
   drawPrimaryStackSection(doc, cursor);
 
-  drawSectionHeading(doc, cursor, '소개', { minFollowingHeight: 90 });
+  drawSectionHeading(doc, cursor, resumeUi.sections.about, { minFollowingHeight: 90 });
   drawParagraphs(doc, cursor, htmlParagraphs(portfolio.main.html), {
     lineGap: 4,
     paragraphGap: 10,
@@ -161,23 +165,33 @@ function drawResume(doc: PDFKit.PDFDocument, portfolio: PortfolioData): void {
     width: INTRO_TEXT_WIDTH,
   });
 
-  drawSectionHeading(doc, cursor, '학력', { minFollowingHeight: 78 });
+  drawSectionHeading(doc, cursor, resumeUi.sections.education, { minFollowingHeight: 78 });
   drawTimeline(doc, cursor, portfolio.educations.map(educationToTimelineItem));
 
   addPage(doc);
   cursor.y = PAGE_MARGIN_TOP;
-  drawCareerPage(doc, cursor, portfolio.careers);
+  drawCareerPage(doc, cursor, portfolio.careers, resumeUi.sections.career);
 
-  const requestedProjects = selectRequestedProjects(portfolio.projects);
+  const requestedProjects = selectRequestedProjects(
+    portfolio.projects,
+    resumeUi.roleSectionHeading,
+    resumeUi.resultsSectionHeading,
+  );
   addPage(doc);
   cursor.y = PAGE_MARGIN_TOP;
-  drawProjectPage(doc, cursor, '팀 프로젝트', requestedProjects.slice(0, 3));
+  drawProjectPage(doc, cursor, resumeUi.sections.teamProjects, requestedProjects.slice(0, 3), {
+    contribution: resumeUi.projectContribution,
+    role: resumeUi.projectRole,
+  });
 
   addPage(doc);
   cursor.y = PAGE_MARGIN_TOP;
-  drawProjectPage(doc, cursor, '개인 프로젝트', requestedProjects.slice(3, 6));
+  drawProjectPage(doc, cursor, resumeUi.sections.personalProjects, requestedProjects.slice(3, 6), {
+    contribution: resumeUi.projectContribution,
+    role: resumeUi.projectRole,
+  });
 
-  drawSectionHeading(doc, cursor, '수상이력', { minFollowingHeight: 42 });
+  drawSectionHeading(doc, cursor, resumeUi.sections.awards, { minFollowingHeight: 42 });
   for (const award of portfolio.awards) {
     drawCredentialRow(doc, cursor, {
       date: formatDate(award.date),
@@ -186,7 +200,7 @@ function drawResume(doc: PDFKit.PDFDocument, portfolio: PortfolioData): void {
     });
   }
 
-  drawSectionHeading(doc, cursor, '자격 및 점수', { minFollowingHeight: 42 });
+  drawSectionHeading(doc, cursor, resumeUi.sections.licenses, { minFollowingHeight: 42 });
   for (const license of portfolio.licenses) {
     drawCredentialRow(doc, cursor, {
       date: formatDate(license.date),
@@ -196,7 +210,12 @@ function drawResume(doc: PDFKit.PDFDocument, portfolio: PortfolioData): void {
   }
 }
 
-function drawHeader(doc: PDFKit.PDFDocument, cursor: Cursor, portfolio: PortfolioData): void {
+function drawHeader(
+  doc: PDFKit.PDFDocument,
+  cursor: Cursor,
+  portfolio: PortfolioData,
+  jobTitle: string,
+): void {
   const contentWidth = getContentWidth(doc);
   const photoWidth = 96;
   const photoHeight = 116;
@@ -214,7 +233,7 @@ function drawHeader(doc: PDFKit.PDFDocument, cursor: Cursor, portfolio: Portfoli
     .font(fonts.semibold)
     .fontSize(11)
     .fillColor(colors.muted)
-    .text('소프트웨어 개발자', PAGE_MARGIN_X, startY + 42, { width: textWidth });
+    .text(jobTitle, PAGE_MARGIN_X, startY + 42, { width: textWidth });
 
   const contactRows = [
     { kind: 'email' as const, value: portfolio.main.email },
@@ -435,8 +454,13 @@ function measureTimelineItem(doc: PDFKit.PDFDocument, item: TimelineRenderItem):
   return Math.max(height, 58);
 }
 
-function drawCareerPage(doc: PDFKit.PDFDocument, cursor: Cursor, careers: CareerItem[]): void {
-  drawSectionHeading(doc, cursor, '경력', { minFollowingHeight: 620 });
+function drawCareerPage(
+  doc: PDFKit.PDFDocument,
+  cursor: Cursor,
+  careers: CareerItem[],
+  sectionTitle: string,
+): void {
+  drawSectionHeading(doc, cursor, sectionTitle, { minFollowingHeight: 620 });
 
   const rowGap = 12;
   const availableHeight = doc.page.height - PAGE_MARGIN_BOTTOM - cursor.y;
@@ -516,14 +540,20 @@ function drawCareerEntry(
   cursor.y += height;
 }
 
-function drawProjectPage(doc: PDFKit.PDFDocument, cursor: Cursor, title: string, records: ProjectResumeRecord[]): void {
+function drawProjectPage(
+  doc: PDFKit.PDFDocument,
+  cursor: Cursor,
+  title: string,
+  records: ProjectResumeRecord[],
+  labels: { role: string; contribution: string },
+): void {
   drawSectionHeading(doc, cursor, title, { minFollowingHeight: 650 });
 
   const gap = 12;
   const rowHeight = Math.floor((doc.page.height - PAGE_MARGIN_BOTTOM - cursor.y - gap * 2) / 3);
 
   for (const [index, record] of records.entries()) {
-    drawProjectResumeEntry(doc, cursor, record, rowHeight, index === records.length - 1);
+    drawProjectResumeEntry(doc, cursor, record, rowHeight, index === records.length - 1, labels);
     cursor.y += gap;
   }
 }
@@ -534,6 +564,7 @@ function drawProjectResumeEntry(
   record: ProjectResumeRecord,
   height: number,
   isLast: boolean,
+  labels: { role: string; contribution: string },
 ): void {
   const { project } = record;
   const x = PAGE_MARGIN_X;
@@ -574,8 +605,16 @@ function drawProjectResumeEntry(
 
   drawStackLine(doc, project.stacks.map((stack) => stack.name).slice(0, 7), x, leftY, leftWidth - 12, ENTRY_STACK_SIZE);
 
-  const roleEnd = drawSmallSection(doc, '내 역할', record.roleItems.slice(0, 3), rightX, y, rightWidth, y + height - 8);
-  drawSmallSection(doc, '기여', record.contributionItems.slice(0, 3), rightX, Math.max(roleEnd + 9, y + 96), rightWidth, y + height - 8);
+  const roleEnd = drawSmallSection(doc, labels.role, record.roleItems.slice(0, 3), rightX, y, rightWidth, y + height - 8);
+  drawSmallSection(
+    doc,
+    labels.contribution,
+    record.contributionItems.slice(0, 3),
+    rightX,
+    Math.max(roleEnd + 9, y + 96),
+    rightWidth,
+    y + height - 8,
+  );
 
   if (!isLast) {
     doc
@@ -638,10 +677,26 @@ function drawStackLine(
     lineBreak: false,
     width: 30,
   });
-  doc.font(fonts.regular).fontSize(size).fillColor(colors.muted).text(values.join(' / '), x + 36, y, {
+  doc.font(fonts.regular).fontSize(size);
+  const stackText = compactStackLine(doc, values, width - 36);
+  doc.fillColor(colors.muted).text(stackText, x + 36, y, {
     lineBreak: false,
     width: width - 36,
   });
+}
+
+function compactStackLine(doc: PDFKit.PDFDocument, values: string[], width: number): string {
+  const separator = ' / ';
+  const fullText = values.join(separator);
+  if (doc.widthOfString(fullText) <= width) return fullText;
+
+  for (let visibleCount = values.length - 1; visibleCount >= 1; visibleCount -= 1) {
+    const remainingCount = values.length - visibleCount;
+    const candidate = `${values.slice(0, visibleCount).join(separator)}${separator}+${remainingCount}`;
+    if (doc.widthOfString(candidate) <= width) return candidate;
+  }
+
+  return `+${values.length}`;
 }
 
 function drawCredentialRow(
@@ -765,7 +820,11 @@ function educationToTimelineItem(education: EducationItem): TimelineRenderItem {
   };
 }
 
-function selectRequestedProjects(projects: ProjectItem[]): ProjectResumeRecord[] {
+function selectRequestedProjects(
+  projects: ProjectItem[],
+  roleSectionHeading: string,
+  resultsSectionHeading: string,
+): ProjectResumeRecord[] {
   const projectsByTitle = new Map(projects.map((project) => [project.title, project]));
 
   return REQUESTED_PROJECT_TITLES.map((title) => {
@@ -774,13 +833,13 @@ function selectRequestedProjects(projects: ProjectItem[]): ProjectResumeRecord[]
 
     return {
       project,
-      roleItems: extractHtmlSectionItems(project, '내 역할'),
-      contributionItems: extractHtmlSectionItems(project, '수치화된 성과'),
+      roleItems: extractHtmlSectionItems(project, roleSectionHeading, true),
+      contributionItems: extractHtmlSectionItems(project, resultsSectionHeading, false),
     };
   });
 }
 
-function extractHtmlSectionItems(project: ProjectItem, heading: string): string[] {
+function extractHtmlSectionItems(project: ProjectItem, heading: string, fallbackToDescription: boolean): string[] {
   const html = [project.htmlBeforeProblemSolutions, project.htmlAfterProblemSolutions].filter(Boolean).join('\n');
   const sectionPattern = new RegExp(`<h2[^>]*>\\s*${escapeRegExp(heading)}\\s*</h2>([\\s\\S]*?)(?=<h2\\b|$)`, 'i');
   const section = sectionPattern.exec(html)?.[1] ?? '';
@@ -788,7 +847,7 @@ function extractHtmlSectionItems(project: ProjectItem, heading: string): string[
 
   if (items.length > 0) return items;
 
-  return heading === '내 역할'
+  return fallbackToDescription
     ? [project.description ?? '']
     : project.problemSolutions.map((item) => item.solutionHtml);
 }

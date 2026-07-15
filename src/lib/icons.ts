@@ -26,31 +26,31 @@ function icon(fileName: string, label: string): IconDescriptor {
 }
 
 const icons = {
-  activity: icon('newspaper', '활동'),
+  activity: icon('newspaper', 'Activity'),
   apple: icon('brand-apple', 'Apple'),
-  award: icon('award', '수상'),
+  award: icon('award', 'Award'),
   aws: icon('brand-aws', 'AWS'),
-  badge: icon('badge-check', '자격'),
-  birth: icon('calendar-days', '생년월일'),
-  book: icon('book-open', '문서'),
-  building: icon('building-2', '기관'),
-  certificate: icon('id-card', '자격증'),
-  code: icon('code-xml', '코드'),
-  email: icon('mail', '이메일'),
-  external: icon('external-link', '외부 링크'),
-  file: icon('file-text', '자료'),
+  badge: icon('badge-check', 'Credential'),
+  birth: icon('calendar-days', 'Date of birth'),
+  book: icon('book-open', 'Document'),
+  building: icon('building-2', 'Organization'),
+  certificate: icon('id-card', 'Certificate'),
+  code: icon('code-xml', 'Code'),
+  email: icon('mail', 'Email'),
+  external: icon('external-link', 'External link'),
+  file: icon('file-text', 'Resource'),
   github: icon('brand-github', 'GitHub'),
-  globe: icon('globe', '웹사이트'),
-  graduation: icon('graduation-cap', '교육'),
-  language: icon('languages', '어학'),
+  globe: icon('globe', 'Website'),
+  graduation: icon('graduation-cap', 'Education'),
+  language: icon('languages', 'Language'),
   linkedin: icon('brand-linkedin', 'LinkedIn'),
   microsoft: icon('brand-microsoft', 'Microsoft'),
-  package: icon('package', '패키지'),
+  package: icon('package', 'Package'),
   samsung: icon('brand-samsung', 'Samsung'),
-  school: icon('school', '학교'),
-  shield: icon('shield-check', '검증'),
-  trophy: icon('trophy', '대회'),
-  work: icon('briefcase-business', '경력'),
+  school: icon('school', 'School'),
+  shield: icon('shield-check', 'Verification'),
+  trophy: icon('trophy', 'Competition'),
+  work: icon('briefcase-business', 'Experience'),
 } as const;
 
 export function contactIcon(kind: 'email' | 'github' | 'linkedin' | 'birth'): IconDescriptor {
@@ -63,7 +63,7 @@ export function iconForActivity(title: string): IconDescriptor {
 }
 
 export function iconForEducation(item: { name: string }): IconDescriptor {
-  if (includesAny(item.name, ['대학교', '교육원'])) return icons.graduation;
+  if (includesAny(item.name, ['대학교', '교육원', 'University', 'Institute'])) return icons.graduation;
   return icons.school;
 }
 
@@ -87,19 +87,23 @@ export function iconForLicense(item: { name: string; issuer?: string }): IconDes
   const text = `${item.name} ${item.issuer ?? ''}`;
   if (includesAny(text, ['Microsoft'])) return icons.microsoft;
   if (includesAny(text, ['TOEIC', 'ETS'])) return icons.language;
-  if (includesAny(text, ['정보처리', '한국산업인력공단'])) return icons.shield;
+  if (includesAny(text, ['정보처리', '한국산업인력공단', 'Information Processing', 'Human Resources Development Service'])) {
+    return icons.shield;
+  }
   if (includesAny(text, ['TOPCIT'])) return icons.certificate;
   return icons.badge;
 }
 
 export function iconForLink(link: LinkItem): IconDescriptor {
   const text = `${link.label} ${link.url}`;
-  if (includesAny(text, ['github.com', 'GitHub', '소스 코드', '공개 repo'])) return icons.github;
+  if (includesAny(text, ['github.com', 'GitHub', '소스 코드', '공개 repo', 'Source Code', 'Public Repository'])) {
+    return icons.github;
+  }
   if (includesAny(text, ['pub.dev', 'Pub'])) return icons.package;
-  if (includesAny(text, ['기사'])) return icons.book;
-  if (includesAny(text, ['자료'])) return icons.file;
-  if (includesAny(text, ['웹 서비스', '웹사이트', '홈페이지'])) return icons.globe;
-  if (includesAny(text, ['회고록', 'blog.'])) return icons.book;
+  if (includesAny(text, ['기사', 'Article'])) return icons.book;
+  if (includesAny(text, ['자료', 'Materials'])) return icons.file;
+  if (includesAny(text, ['웹 서비스', '웹사이트', '홈페이지', 'Web Service', 'Website'])) return icons.globe;
+  if (includesAny(text, ['회고록', 'Retrospective', 'blog.'])) return icons.book;
   return icons.external;
 }
 

@@ -1,0 +1,97 @@
+[
+  {
+    "name": "Daegu National University of Education C Programming Competition",
+    "level": "Excellence Award",
+    "date": "2017-11-01"
+  },
+  {
+    "name": "3rd Korea Code Fair Software Competition",
+    "level": "Silver Prize",
+    "date": "2021-12-28"
+  },
+  {
+    "name": "Daegu Metropolitan City ICT Creativity Competition",
+    "level": "Bronze Prize",
+    "date": "2022-06-27"
+  },
+  {
+    "name": "Daegu National Science Museum Software Convergence Hackathon",
+    "level": "Top Excellence Award",
+    "date": "2022-07-17"
+  },
+  {
+    "name": "Samsung Junior Software Creation Contest",
+    "level": "Mutual Growth Award",
+    "date": "2022-09-03",
+    "project": "./projects/team/allermi.md"
+  },
+  {
+    "name": "Global Innovator Festa Rookie League",
+    "level": "Gold Prize",
+    "date": "2022-10-28"
+  },
+  {
+    "name": "School Winter Software Hackathon",
+    "level": "Grand Prize",
+    "date": "2023-02-09"
+  },
+  {
+    "name": "Apple WWDC Swift Student Challenge",
+    "level": "Winner",
+    "date": "2023-05-10",
+    "project": "./projects/personal/allergist.md"
+  },
+  {
+    "name": "Microsoft Hackers Ground",
+    "level": "Top Excellence Award",
+    "date": "2023-06-23"
+  },
+  {
+    "name": "School Summer Software Hackathon",
+    "level": "Grand Prize",
+    "date": "2023-07-13"
+  },
+  {
+    "name": "Software Meister High Schools Joint Hackathon",
+    "level": "AWS Corporate Award",
+    "date": "2023-10-13"
+  },
+  {
+    "name": "SK Smarteen App+ Challenge",
+    "level": "Top Excellence Award",
+    "date": "2023-11-04",
+    "project": "./projects/team/toongether.md"
+  },
+  {
+    "name": "School Algorithm Competition",
+    "level": "Silver Prize",
+    "date": "2023-12-19"
+  },
+  {
+    "name": "9th Highthon",
+    "level": "Inflearn Special Award",
+    "date": "2024-02-19"
+  },
+  {
+    "name": "Apple WWDC Swift Student Challenge",
+    "level": "Winner",
+    "date": "2024-03-29",
+    "project": "./projects/personal/app-pilot.md"
+  },
+  {
+    "name": "Fun Hackathon Weekend in Silicon Valley",
+    "level": "3rd Place",
+    "date": "2024-08-04"
+  },
+  {
+    "name": "SK Smarteen App+ Challenge",
+    "level": "Excellence Award",
+    "date": "2024-11-08",
+    "project": "./projects/team/loveandcode.md"
+  },
+  {
+    "name": "10th Highthon",
+    "level": "Excellence Award",
+    "date": "2025-02-16"
+  }
+]

@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import matter from 'gray-matter';
 import { Marked, Renderer } from 'marked';
+import type { Locale } from './i18n';
 
 const ASSETS_ROOT = path.resolve(process.cwd(), 'assets');
 
@@ -200,16 +201,17 @@ const marked = new Marked({
   breaks: false,
 });
 
-export async function loadPortfolio(): Promise<PortfolioData> {
+export async function loadPortfolio(locale: Locale = 'ko'): Promise<PortfolioData> {
+  const contentRoot = locale === 'ko' ? ASSETS_ROOT : path.join(ASSETS_ROOT, 'locales', locale);
   const [mainMarkdown, educationsRaw, careersRaw, awardsRaw, licensesRaw, techStacksRaw, projectsRaw] =
     await Promise.all([
-      readMarkdown('main.md'),
-      readJson<Record<string, unknown>[]>('educations.json'),
-      readJson<Record<string, unknown>[]>('career.json'),
-      readJson<Record<string, unknown>[]>('awards.json'),
-      readJson<Record<string, unknown>[]>('licenses.json'),
-      readJson<{ stacks: StackBadge[] }>('tech_stacks.json'),
-      readProjects(),
+      readMarkdown('main.md', contentRoot),
+      readJson<Record<string, unknown>[]>('educations.json', contentRoot),
+      readJson<Record<string, unknown>[]>('career.json', contentRoot),
+      readJson<Record<string, unknown>[]>('awards.json', contentRoot),
+      readJson<Record<string, unknown>[]>('licenses.json', contentRoot),
+      readJson<{ stacks: StackBadge[] }>('tech_stacks.json', ASSETS_ROOT),
+      readProjects(contentRoot),
     ]);
 
   const mainMatter = matter(mainMarkdown);
@@ -231,7 +233,7 @@ export async function loadPortfolio(): Promise<PortfolioData> {
       .map((ref) => ref.key),
   );
 
-  const mainName = extractFirstHeading(mainMatter.content) ?? '이석호';
+  const mainName = extractFirstHeading(mainMatter.content) ?? (locale === 'en' ? 'Seokho Lee' : '이석호');
   const main: MainInfo = {
     id: 'intro',
     name: mainName,
@@ -316,7 +318,7 @@ export async function loadPortfolio(): Promise<PortfolioData> {
       const team = asString(project.data.team);
       const award = asString(project.data.award);
       const projectMarkdown = stripFirstHeading(project.body);
-      const projectSections = extractProjectProblemSolutions(projectMarkdown, project.sourcePath, errors);
+      const projectSections = extractProjectProblemSolutions(projectMarkdown, project.sourcePath, errors, locale);
       const htmlBeforeProblemSolutions = renderMarkdownIfPresent(
         projectSections.beforeProblemSolutions,
         project.sourcePath,
@@ -511,8 +513,10 @@ function extractProjectProblemSolutions(
   markdown: string,
   sourcePath: string,
   errors: string[],
+  locale: Locale,
 ): ProjectMarkdownSections {
-  const headingMatch = /^##\s+문제와\s+해결\s*$/m.exec(markdown);
+  const syntax = projectProblemSolutionSyntax(locale);
+  const headingMatch = new RegExp(`^##\\s+${escapeRegExp(syntax.heading)}\\s*$`, 'm').exec(markdown);
 
   if (!headingMatch) {
     return {
@@ -531,7 +535,7 @@ function extractProjectProblemSolutions(
   return {
     beforeProblemSolutions,
     afterProblemSolutions,
-    problemSolutions: parseProjectProblemSolutions(rawProblemSolutions, sourcePath, errors),
+    problemSolutions: parseProjectProblemSolutions(rawProblemSolutions, sourcePath, errors, syntax),
   };
 }
 
@@ -539,24 +543,27 @@ function parseProjectProblemSolutions(
   markdown: string,
   sourcePath: string,
   errors: string[],
+  syntax: { heading: string; problem: string; solution: string },
 ): RawProjectProblemSolution[] {
   const problemSolutions: RawProjectProblemSolution[] = [];
   let pendingProblem: string | undefined;
+  const problemPattern = new RegExp(`^\\s*-\\s*${escapeRegExp(syntax.problem)}:\\s*(.+)\\s*$`);
+  const solutionPattern = new RegExp(`^\\s*-\\s*${escapeRegExp(syntax.solution)}:\\s*(.+)\\s*$`);
 
   for (const [index, line] of markdown.trim().split(/\r?\n/).entries()) {
-    const problemMatch = line.match(/^\s*-\s*문제:\s*(.+)\s*$/);
+    const problemMatch = line.match(problemPattern);
     if (problemMatch) {
       if (pendingProblem) {
-        errors.push(`${sourcePath}: problem without solution before line ${index + 1} in "문제와 해결" section`);
+        errors.push(`${sourcePath}: problem without solution before line ${index + 1} in "${syntax.heading}" section`);
       }
       pendingProblem = problemMatch[1].trim();
       continue;
     }
 
-    const solutionMatch = line.match(/^\s*-\s*해결:\s*(.+)\s*$/);
+    const solutionMatch = line.match(solutionPattern);
     if (solutionMatch) {
       if (!pendingProblem) {
-        errors.push(`${sourcePath}: solution without problem at line ${index + 1} in "문제와 해결" section`);
+        errors.push(`${sourcePath}: solution without problem at line ${index + 1} in "${syntax.heading}" section`);
         continue;
       }
 
@@ -570,14 +577,20 @@ function parseProjectProblemSolutions(
 
     if (line.trim().length === 0) continue;
 
-    errors.push(`${sourcePath}: unsupported line at ${index + 1} in "문제와 해결" section`);
+    errors.push(`${sourcePath}: unsupported line at ${index + 1} in "${syntax.heading}" section`);
   }
 
   if (pendingProblem) {
-    errors.push(`${sourcePath}: problem without solution at end of "문제와 해결" section`);
+    errors.push(`${sourcePath}: problem without solution at end of "${syntax.heading}" section`);
   }
 
   return problemSolutions;
+}
+
+function projectProblemSolutionSyntax(locale: Locale): { heading: string; problem: string; solution: string } {
+  return locale === 'en'
+    ? { heading: 'Problems and Solutions', problem: 'Problem', solution: 'Solution' }
+    : { heading: '문제와 해결', problem: '문제', solution: '해결' };
 }
 
 function resolveHref(href: string, sourcePath: string, registry: Map<string, TargetRecord>, errors: string[]): string {
@@ -767,12 +780,12 @@ function normalizeStack(stack: StackBadge): StackBadge {
   };
 }
 
-async function readProjects(): Promise<RawProject[]> {
-  const projectPaths = await listMarkdownFiles(path.join(ASSETS_ROOT, 'projects'));
+async function readProjects(contentRoot: string): Promise<RawProject[]> {
+  const projectPaths = await listMarkdownFiles(path.join(contentRoot, 'projects'));
 
   return Promise.all(
     projectPaths.map(async (absolutePath) => {
-      const sourcePath = normalizeAssetPath(path.relative(ASSETS_ROOT, absolutePath).split(path.sep).join(path.posix.sep));
+      const sourcePath = normalizeAssetPath(path.relative(contentRoot, absolutePath).split(path.sep).join(path.posix.sep));
       const file = matter(await fs.readFile(absolutePath, 'utf8'));
 
       return {
@@ -798,12 +811,12 @@ async function listMarkdownFiles(directory: string): Promise<string[]> {
   return files.flat();
 }
 
-async function readMarkdown(relativePath: string): Promise<string> {
-  return fs.readFile(path.join(ASSETS_ROOT, relativePath), 'utf8');
+async function readMarkdown(relativePath: string, contentRoot: string): Promise<string> {
+  return fs.readFile(path.join(contentRoot, relativePath), 'utf8');
 }
 
-async function readJson<T>(relativePath: string): Promise<T> {
-  return JSON.parse(await fs.readFile(path.join(ASSETS_ROOT, relativePath), 'utf8')) as T;
+async function readJson<T>(relativePath: string, contentRoot: string): Promise<T> {
+  return JSON.parse(await fs.readFile(path.join(contentRoot, relativePath), 'utf8')) as T;
 }
 
 function comparePeriodDescending<T extends { index: number; period?: string }>(a: T, b: T): number {
@@ -923,4 +936,8 @@ function escapeHtml(value: string): string {
     .replace(/"/g, '&quot;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

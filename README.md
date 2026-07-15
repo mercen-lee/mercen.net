@@ -1,6 +1,6 @@
 # mercen.net
 
-이석호의 개인 포트폴리오 사이트입니다. Astro 기반 정적 사이트로 빌드되며, 프로필, 학력, 경력, 수상, 프로젝트, 자격 정보를 `assets/`의 Markdown과 JSON 데이터에서 읽어 렌더링합니다.
+이석호의 개인 포트폴리오 사이트입니다. Astro 기반 정적 사이트로 빌드되며, 한국어(`/`)와 영어(`/en/`)를 지원합니다. 프로필, 학력, 경력, 수상, 프로젝트, 자격 정보를 `assets/`의 Markdown과 JSON 데이터에서 읽어 렌더링합니다.
 
 ## Stack
 
@@ -49,6 +49,7 @@ pnpm run preview  # 빌드 결과 로컬 미리보기
 - `assets/awards.json`: 수상
 - `assets/licenses.json`: 자격
 - `assets/tech_stacks.json`: 기술 스택과 아이콘 매핑
+- `assets/locales/en/`: 영어 소개, 학력, 경력, 수상, 자격, 프로젝트 번역본
 - `assets/projects/team/*.md`: 팀 프로젝트
 - `assets/projects/personal/*.md`: 개인 프로젝트
 - `assets/icons/`: UI 아이콘과 기술 스택 아이콘
@@ -56,6 +57,9 @@ pnpm run preview  # 빌드 결과 로컬 미리보기
 - `public/`: 원본 그대로 배포되는 정적 파일, CNAME, favicon, OG 이미지, 폰트
 
 Markdown 본문과 JSON 문자열에서는 `./career.json#/0`, `./awards.json#/2`처럼 같은 `assets/` 기준 경로와 JSON Pointer를 사용해 항목을 참조할 수 있습니다. 참조 대상이 잘못되면 콘텐츠 로딩 과정에서 오류가 발생하도록 되어 있습니다.
+
+영문 콘텐츠에서도 같은 참조 구조를 유지하며, 공통 기술 스택 정의와 이미지 자산은 한국어 콘텐츠와 공유합니다. 프로필 영역의 KR/EN 셀렉터는 현재 섹션 해시를 유지한 채 언어 경로를 전환합니다.
+한국어 이력서는 `/resume.pdf`, 영어 이력서는 `/en/resume.pdf`에서 각각 생성됩니다.
 
 학력 JSON과 프로젝트 Markdown frontmatter의 `logo_image`에는 `./images/education/dgsw.webp`, `../../images/projects/app-pilot.webp`처럼 `assets/` 안의 이미지 상대 경로를 넣어 홈페이지 로고를 데이터로 연결합니다.
 

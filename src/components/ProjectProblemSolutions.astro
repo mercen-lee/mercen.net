@@ -1,26 +1,29 @@
 ---
 import type { ProjectProblemSolution } from '../lib/content';
+import { getUi, type Locale } from '../lib/i18n';
 
 type Props = {
   items: ProjectProblemSolution[];
+  locale: Locale;
 };
 
-const { items } = Astro.props;
+const { items, locale } = Astro.props;
+const labels = getUi(locale).problemSolutions;
 ---
 
 {
   items.length > 0 && (
-    <section class="project-problem-solutions" aria-label="문제와 해결">
-      <h2>문제와 해결</h2>
+    <section class="project-problem-solutions" aria-label={labels.sectionLabel}>
+      <h2>{labels.heading}</h2>
       <div class="problem-solution-list">
         {items.map((item) => (
           <article class="problem-solution-item">
             <div class="problem-solution-cell problem-solution-cell--problem">
-              <span class="problem-solution-label">문제</span>
+              <span class="problem-solution-label">{labels.problem}</span>
               <p class="problem-solution-copy" set:html={item.problemHtml} />
             </div>
             <div class="problem-solution-cell problem-solution-cell--solution">
-              <span class="problem-solution-label">해결</span>
+              <span class="problem-solution-label">{labels.solution}</span>
               <p class="problem-solution-copy" set:html={item.solutionHtml} />
             </div>
           </article>

@@ -94,6 +94,19 @@ body {
   line-break: strict;
 }
 
+body[data-locale="en"] {
+  word-spacing: normal;
+  word-break: normal;
+  line-break: auto;
+}
+
+body[data-locale="en"] h1,
+body[data-locale="en"] h2,
+body[data-locale="en"] h3,
+body[data-locale="en"] p {
+  word-break: normal;
+}
+
 body::before,
 body::after {
   position: fixed;
@@ -311,6 +324,54 @@ select {
 
 .site-nav a.is-active {
   color: var(--text);
+}
+
+.language-selector {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  padding: 0 10px 0 30px;
+  color: var(--faint);
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.language-selector a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  color: var(--muted);
+  transition: color 160ms ease;
+}
+
+.language-selector a[aria-current="page"] {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.28em;
+}
+
+.language-selector a:focus-visible {
+  outline: 1px solid var(--text);
+  outline-offset: 4px;
+}
+
+.language-selector__separator {
+  color: var(--faint);
+  opacity: 0.72;
+}
+
+.language-selector--profile {
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 0 10px;
+  padding: 0;
 }
 
 .section-shell {
@@ -1364,6 +1425,10 @@ h3 {
 }
 
 @media (hover: hover) and (pointer: fine) {
+  .language-selector a:hover {
+    color: var(--text);
+  }
+
   .site-nav a:hover,
   .profile-links > a:hover,
   .hero__prose a:hover,
@@ -1447,8 +1512,10 @@ h3 {
 
   .site-nav {
     flex-direction: row;
+    flex: 1 1 auto;
     gap: 16px;
-    width: 100%;
+    width: auto;
+    min-width: 0;
     align-items: center;
     justify-content: flex-start;
     overflow-x: auto;
@@ -1538,6 +1605,11 @@ h3 {
     justify-content: center;
   }
 
+  .language-selector--profile {
+    margin-right: auto;
+    margin-left: auto;
+  }
+
   .hero-achievements {
     justify-items: center;
     width: min(100%, 460px);
@@ -1572,6 +1644,7 @@ h3 {
   }
 
   .site-nav {
+    gap: 8px;
     justify-content: center;
   }
 

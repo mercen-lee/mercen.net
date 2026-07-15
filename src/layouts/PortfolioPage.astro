@@ -1,0 +1,714 @@
+---
+import path from 'node:path';
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import profileImage from '@assets/images/personal/profile.jpg';
+import ProjectProblemSolutions from '../components/ProjectProblemSolutions.astro';
+import StackBadges from '../components/StackBadges.astro';
+import { loadPortfolio, type ProjectItem } from '../lib/content';
+import {
+  contactIcon,
+  iconForAward,
+  iconForCareer,
+  iconForEducation,
+  iconForLicense,
+  iconForLink,
+} from '../lib/icons';
+import { getUi, localePath, type Locale } from '../lib/i18n';
+import { googleAnalyticsId } from '../scripts/analytics';
+import '../styles/global.css';
+
+type Props = {
+  locale: Locale;
+};
+
+const { locale } = Astro.props;
+const ui = getUi(locale);
+const portfolio = await loadPortfolio(locale);
+const siteOrigin = 'https://mercen.net';
+const siteUrl = new URL(ui.path, siteOrigin).href;
+const siteTitle = `${portfolio.main.name} | ${ui.siteTitleRole}`;
+const siteDescription = ui.siteDescription;
+const openGraphImage = new URL('/opengraph.png', siteOrigin).href;
+const keywords = ui.keywords.join(', ');
+const personStructuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: portfolio.main.name,
+  url: siteUrl,
+  image: openGraphImage,
+  jobTitle: ui.siteTitleRole,
+  email: portfolio.main.email ? `mailto:${portfolio.main.email}` : undefined,
+  sameAs: [portfolio.main.github, portfolio.main.linkedin].filter(Boolean),
+  inLanguage: ui.htmlLang,
+};
+const googleAnalyticsBootstrap = `
+window.dataLayer = window.dataLayer || [];
+window.gtag = window.gtag || function gtag(){ window.dataLayer.push(arguments); };
+window.gtag('js', new Date());
+window.gtag('config', '${googleAnalyticsId}', {
+  send_page_view: true,
+  transport_type: 'beacon'
+});
+`;
+
+const stackIconModules = import.meta.glob<string>('../../assets/icons/tech-stacks/*.svg', {
+  eager: true,
+  import: 'default',
+  query: '?url',
+});
+
+const rasterImageModules = import.meta.glob<{ default: ImageMetadata }>('../../assets/projects/**/*.{jpg,jpeg,png,webp,avif}', {
+  eager: true,
+});
+
+const logoImageModules = import.meta.glob<{ default: ImageMetadata }>(
+  '../../assets/images/{education,projects}/*.{jpg,jpeg,png,webp,avif}',
+  {
+    eager: true,
+  },
+);
+
+const personalImageModules = import.meta.glob<{ default: ImageMetadata }>(
+  '../../assets/images/personal/*.{jpg,jpeg,png,webp,avif}',
+  {
+    eager: true,
+  },
+);
+
+const stackIconUrls = new Map(
+  Object.entries(stackIconModules).map(([modulePath, url]) => [normalizeAssetModulePath(modulePath), url]),
+);
+
+const rasterImages = new Map(
+  Object.entries(rasterImageModules).map(([modulePath, module]) => [normalizeAssetModulePath(modulePath), module.default]),
+);
+
+const logoImages = new Map(
+  Object.entries(logoImageModules).map(([modulePath, module]) => [normalizeAssetModulePath(modulePath), module.default]),
+);
+
+const personalImagesByFilename = new Map(
+  Object.entries(personalImageModules).map(([modulePath, module]) => [
+    path.posix.basename(modulePath).replace(/\.[^.]+$/, ''),
+    module.default,
+  ]),
+);
+
+const personalGalleryImages = ui.galleryItems
+  .map((item) => ({
+    ...item,
+    image: personalImagesByFilename.get(item.filename),
+  }))
+  .filter((item): item is typeof item & { image: ImageMetadata } => Boolean(item.image));
+
+const projectGroups = [
+  {
+    kind: 'company',
+    title: ui.projectGroups.company,
+    projects: portfolio.projects.filter((project) => project.kind === 'company'),
+  },
+  {
+    kind: 'team',
+    title: ui.projectGroups.team,
+    projects: portfolio.projects.filter((project) => project.kind === 'team'),
+  },
+  {
+    kind: 'personal',
+    title: ui.projectGroups.personal,
+    projects: portfolio.projects.filter((project) => project.kind === 'personal'),
+  },
+].filter((group) => group.projects.length > 0);
+
+const swiftChallengeWins = portfolio.awards.filter(
+  (award) => award.name === 'Apple WWDC Swift Student Challenge' && award.level === ui.winnerLevel,
+);
+const latestSwiftChallengeWin = swiftChallengeWins[0];
+const swiftChallengeAchievement =
+  swiftChallengeWins.length >= 2 && latestSwiftChallengeWin
+    ? {
+        href: `#${latestSwiftChallengeWin.id}`,
+        label: ui.achievements.swiftChallenge(swiftChallengeWins.length),
+        icon: iconForAward(latestSwiftChallengeWin),
+      }
+    : undefined;
+const isefEducation = portfolio.educations.find((education) =>
+  education.highlights?.some((highlight) =>
+    ['ISEF', 'International Science and Engineering Fair', '국제과학기술경진대회'].some((keyword) =>
+      highlight.includes(keyword),
+    ),
+  ),
+);
+const giftedEducation = portfolio.educations.find((education) =>
+  ['정보영재교육원', 'Gifted Institute for Information Technology'].some((keyword) => education.name.includes(keyword)),
+);
+const profileAchievements = [
+  {
+    href: giftedEducation ? `#${giftedEducation.id}` : '#education',
+    label: ui.achievements.gifted,
+    icon: iconForEducation({ name: giftedEducation?.name ?? ui.achievements.gifted }),
+  },
+  {
+    href: isefEducation ? `#${isefEducation.id}` : '#education',
+    label: ui.achievements.isef,
+    icon: iconForAward({ name: 'International Science and Engineering Fair', level: 'Finalist' }),
+  },
+  swiftChallengeAchievement,
+].filter((achievement): achievement is NonNullable<typeof swiftChallengeAchievement> => Boolean(achievement));
+
+const navItems = ui.navItems;
+const languageLinks = [
+  { locale: 'ko' as const, label: 'KR', href: localePath('ko') },
+  { locale: 'en' as const, label: 'EN', href: localePath('en') },
+];
+
+function normalizeAssetModulePath(modulePath: string): string {
+  return modulePath.replace('../../assets/', '').replace(/^\.\//, '');
+}
+
+function resolveMockupImages(project: ProjectItem): ImageMetadata[] {
+  return project.mockupImages
+    .map((mockupImage) => resolveProjectImage(project, mockupImage))
+    .filter((image): image is ImageMetadata => Boolean(image));
+}
+
+function resolveProjectImage(project: ProjectItem, imagePath: string): ImageMetadata | undefined {
+  if (/^(https?:|\/)/.test(imagePath)) return undefined;
+
+  const sourceDir = path.posix.dirname(project.sourcePath);
+  const normalized = path.posix
+    .normalize(path.posix.join(sourceDir === '.' ? '' : sourceDir, imagePath))
+    .replace(/^\.\//, '');
+
+  return rasterImages.get(normalized);
+}
+
+function resolveLogoImage(item: { logoImage?: string }): ImageMetadata | undefined {
+  if (!item.logoImage) return undefined;
+  if (/^(https?:|\/)/.test(item.logoImage)) return undefined;
+
+  return logoImages.get(item.logoImage);
+}
+
+function emailHref(value: string): string {
+  return `mailto:${value}`;
+}
+---
+
+<!doctype html>
+<html lang={ui.htmlLang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={siteDescription} />
+    <meta name="author" content={portfolio.main.name} />
+    <meta name="keywords" content={keywords} />
+    <meta name="robots" content="index, follow" />
+    <meta name="googlebot" content="index, follow, max-image-preview:large" />
+    <meta name="theme-color" content="#080808" />
+    <meta property="og:title" content={siteTitle} />
+    <meta property="og:description" content={siteDescription} />
+    <meta property="og:type" content="profile" />
+    <meta property="og:url" content={siteUrl} />
+    <meta property="og:image" content={openGraphImage} />
+    <meta property="og:image:secure_url" content={openGraphImage} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={ui.ogImageAlt(portfolio.main.name)} />
+    <meta property="og:site_name" content="mercen.net" />
+    <meta property="og:locale" content={ui.ogLocale} />
+    <meta property="og:locale:alternate" content={ui.alternateOgLocale} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={siteTitle} />
+    <meta name="twitter:description" content={siteDescription} />
+    <meta name="twitter:image" content={openGraphImage} />
+    <meta name="twitter:image:alt" content={ui.ogImageAlt(portfolio.main.name)} />
+    <link rel="canonical" href={siteUrl} />
+    <link rel="alternate" hreflang="ko" href={new URL(localePath('ko'), siteOrigin).href} />
+    <link rel="alternate" hreflang="en" href={new URL(localePath('en'), siteOrigin).href} />
+    <link rel="alternate" hreflang="x-default" href={new URL(localePath('ko'), siteOrigin).href} />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="preload" href="/fonts/D2CodingLigature-Regular.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/D2CodingLigature-Bold.woff2" as="font" type="font/woff2" crossorigin />
+    <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`}></script>
+    <script is:inline set:html={googleAnalyticsBootstrap}></script>
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(personStructuredData)} />
+    <title>{siteTitle}</title>
+  </head>
+  <body data-locale={locale}>
+    <div class="scroll-progress" aria-hidden="true"><span></span></div>
+
+    <header class="site-header">
+      <nav class="site-nav" aria-label={ui.navLabel}>
+        {navItems.map((item) => (
+          <a
+            href={item.href}
+            data-nav-link
+            data-analytics-link="nav"
+            data-analytics-label={item.label}
+            data-analytics-target={item.href}
+          >
+            {item.label}
+          </a>
+        ))}
+      </nav>
+    </header>
+
+    <main>
+      <section id="intro" class="hero section-shell" data-nav-section>
+        <div class="hero__profile" aria-label={ui.profileLabel}>
+          <div class="profile-frame">
+            <Image
+              src={profileImage}
+              format="webp"
+              alt={ui.profilePhotoAlt(portfolio.main.name)}
+              loading="eager"
+              decoding="async"
+            />
+          </div>
+          <div class="profile-identity">
+            <nav class="language-selector language-selector--profile" aria-label={ui.languageSelectorLabel}>
+              {languageLinks.map((link, index) => (
+                <>
+                  {index > 0 && <span class="language-selector__separator" aria-hidden="true">/</span>}
+                  <a
+                    href={link.href}
+                    lang={link.locale}
+                    hreflang={link.locale}
+                    aria-current={locale === link.locale ? 'page' : undefined}
+                    data-language-link
+                    data-analytics-link="language"
+                    data-analytics-label={link.label}
+                    data-analytics-target={link.href}
+                  >
+                    {link.label}
+                  </a>
+                </>
+              ))}
+            </nav>
+            <h1>
+              <span>{portfolio.main.name}</span>
+              {locale === 'ko' && <span class="profile-name__latin" lang="en">Seokho Lee</span>}
+            </h1>
+            {profileAchievements.length > 0 && (
+              <div class="hero-achievements" aria-label={ui.achievementsLabel}>
+                {profileAchievements.map((achievement) => (
+                  <a
+                    class="hero-achievement"
+                    href={achievement.href}
+                    data-reference-link
+                    data-analytics-link="intro-achievement"
+                    data-analytics-label={achievement.label}
+                    data-analytics-target={achievement.href}
+                  >
+                    <img
+                      class="hero-achievement__icon"
+                      src={achievement.icon.src}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    <span>{achievement.label}</span>
+                  </a>
+                ))}
+              </div>
+            )}
+            <div class="profile-links" aria-label={ui.contactLinksLabel}>
+              {portfolio.main.email && (
+                <a
+                  href={emailHref(portfolio.main.email)}
+                  data-analytics-link="contact"
+                  data-analytics-label="Email"
+                  data-analytics-target="mailto"
+                >
+                  <img class="ui-icon" src={contactIcon('email').src} alt="" loading="lazy" decoding="async" />
+                  <span class="profile-link__body">
+                    <strong>Email</strong>
+                    <span>{portfolio.main.email}</span>
+                  </span>
+                </a>
+              )}
+              {portfolio.main.github && (
+                <a
+                  href={portfolio.main.github}
+                  target="_blank"
+                  rel="noreferrer"
+                  data-analytics-link="contact"
+                  data-analytics-label="GitHub"
+                  data-analytics-target="github"
+                >
+                  <img class="ui-icon" src={contactIcon('github').src} alt="" loading="lazy" decoding="async" />
+                  <span class="profile-link__body">
+                    <strong>GitHub</strong>
+                    <span>mercen-lee</span>
+                  </span>
+                </a>
+              )}
+              {portfolio.main.linkedin && (
+                <a
+                  href={portfolio.main.linkedin}
+                  target="_blank"
+                  rel="noreferrer"
+                  data-analytics-link="contact"
+                  data-analytics-label="LinkedIn"
+                  data-analytics-target="linkedin"
+                >
+                  <img class="ui-icon" src={contactIcon('linkedin').src} alt="" loading="lazy" decoding="async" />
+                  <span class="profile-link__body">
+                    <strong>LinkedIn</strong>
+                    <span>mercen</span>
+                  </span>
+                </a>
+              )}
+              {portfolio.main.birth_date && (
+                <span>
+                  <img class="ui-icon" src={contactIcon('birth').src} alt="" loading="lazy" decoding="async" />
+                  <span class="profile-link__body">
+                    <strong>Birth</strong>
+                    <span>{portfolio.main.birth_date}</span>
+                  </span>
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div class="hero__content">
+          <div class="hero__prose" set:html={portfolio.main.html} />
+        </div>
+
+        {personalGalleryImages.length > 0 && (
+          <div class="personal-gallery reveal" aria-label={ui.galleryLabel} data-personal-gallery>
+            <div class="personal-gallery__viewport" data-gallery-viewport>
+              <div class="personal-gallery__track" data-gallery-track>
+                {personalGalleryImages.map((item) => (
+                  <figure class="personal-gallery__item" data-gallery-item data-analytics-label={item.description}>
+                    <div class="personal-gallery__image">
+                      <Image
+                        src={item.image}
+                        format="webp"
+                        widths={[280, 320, 480, 640]}
+                        sizes="(max-width: 640px) 72vw, 320px"
+                        alt={ui.galleryImageAlt(portfolio.main.name, item.description)}
+                        loading="eager"
+                        decoding="async"
+                      />
+                    </div>
+                    <figcaption>{item.description}</figcaption>
+                  </figure>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
+
+      <section id="education" class="section-shell" data-nav-section>
+        <div class="section-heading reveal">
+          <h2>{ui.sections.education}</h2>
+        </div>
+        <div class="timeline">
+          {portfolio.educations.map((education) => {
+            const logo = resolveLogoImage(education);
+
+            return (
+              <article id={education.id} class="timeline-card reveal" data-highlight-target>
+                <div class="timeline-card__meta">
+                  <span>{education.period}</span>
+                  <span>{education.role}</span>
+                </div>
+                <div class="record-title">
+                  {logo ? (
+                    <Image
+                      class="record-logo"
+                      src={logo}
+                      widths={[48, 64, 96]}
+                      sizes="32px"
+                      alt={ui.logoAlt(education.name)}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  ) : (
+                    <img class="record-icon" src={iconForEducation(education).src} alt="" loading="lazy" decoding="async" />
+                  )}
+                  <h3>{education.name}</h3>
+                </div>
+                {education.descriptionHtml && <p set:html={education.descriptionHtml} />}
+                {education.highlightsHtml && (
+                  <ul>
+                    {education.highlightsHtml.map((highlight) => <li set:html={highlight} />)}
+                  </ul>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section id="career" class="section-shell" data-nav-section>
+        <div class="section-heading reveal">
+          <h2>{ui.sections.career}</h2>
+        </div>
+        <div class="career-stack">
+          {portfolio.careers.map((career) => {
+            const contributionItems = [...(career.responsibilitiesHtml ?? []), ...(career.highlightsHtml ?? [])];
+
+            return (
+              <details
+                id={career.id}
+                class="career-card t-resize reveal"
+                data-highlight-target
+                data-collapsible-record
+                data-analytics-record
+                data-analytics-record-type="career"
+                data-analytics-record-id={career.id}
+                data-analytics-record-label={career.display_name ?? career.company}
+              >
+                <summary class="career-card__summary">
+                  <div class="record-header">
+                    <div>
+                      <span class="record-kicker">{career.period}</span>
+                      <div class="record-title">
+                        <img class="record-icon" src={iconForCareer(career).src} alt="" loading="lazy" decoding="async" />
+                        <h3>{career.display_name ?? career.company}</h3>
+                      </div>
+                    </div>
+                    <div class="record-role">
+                      <span>{career.role}</span>
+                      {career.locations && <small>{career.locations.join(' / ')}</small>}
+                    </div>
+                  </div>
+                  <span class="record-indicator" aria-hidden="true"></span>
+                </summary>
+                <div class="career-card__body">
+                  {career.descriptionHtml && <p class="record-description" set:html={career.descriptionHtml} />}
+                  {contributionItems.length > 0 && (
+                    <ul class="dense-list" aria-label={ui.majorContributionsLabel}>
+                      {contributionItems.map((item) => <li set:html={item} />)}
+                    </ul>
+                  )}
+                  <StackBadges
+                    stacks={career.stacks}
+                    iconUrls={stackIconUrls}
+                    contextType="career"
+                    contextLabel={career.display_name ?? career.company}
+                  />
+                </div>
+              </details>
+            );
+          })}
+        </div>
+      </section>
+
+      <section id="awards" class="section-shell" data-nav-section>
+        <div class="section-heading reveal">
+          <h2>{ui.sections.awards}</h2>
+        </div>
+        <div class="credential-list" aria-label={ui.awardsListLabel}>
+          {portfolio.awards.map((award) => (
+            <article id={award.id} class="credential-row reveal" data-highlight-target>
+              <time class="credential-date">{award.date}</time>
+              <div class="credential-main">
+                <img class="list-icon" src={iconForAward(award).src} alt="" loading="lazy" decoding="async" />
+                <div>
+                  <h3>{award.name}</h3>
+                  {award.level && <span class="credential-detail">{award.level}</span>}
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section id="projects" class="section-shell" data-nav-section>
+        <div class="section-heading reveal">
+          <h2>{ui.sections.projects}</h2>
+        </div>
+        <div class="project-groups">
+          {projectGroups.map((group) => (
+            <section class="project-group" aria-labelledby={`project-group-${group.kind}`}>
+              <div class="project-group__heading reveal">
+                <h3 id={`project-group-${group.kind}`}>{group.title}</h3>
+                <span>{ui.projectCount(group.projects.length)}</span>
+              </div>
+              <div class="project-stack">
+                {group.projects.map((project) => {
+                  const mockups = resolveMockupImages(project);
+                  const logo = resolveLogoImage(project);
+                  return (
+              <details
+                id={project.id}
+                class="project-record t-resize reveal"
+                data-highlight-target
+                data-collapsible-record
+                data-analytics-record
+                data-analytics-record-type="project"
+                data-analytics-record-id={project.id}
+                data-analytics-record-label={project.title}
+              >
+                <summary class="project-record__summary">
+                  <div class="project-record__summary-copy">
+                    <div class="record-title project-record__title">
+                      {logo && (
+                        <Image
+                          class="record-logo"
+                          src={logo}
+                          widths={[48, 64, 96]}
+                          sizes="32px"
+                          alt={ui.logoAlt(project.title)}
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      )}
+                      <h3>{project.title}</h3>
+                    </div>
+                    {project.descriptionHtml && <p set:html={project.descriptionHtml} />}
+                    {project.meta.length > 0 && (
+                      <div class="project-record__meta">
+                        {project.meta.map((item) => {
+                          const metaClass = `project-record__meta-item project-record__meta-item--${item.kind}`;
+                          return (
+                            <span class={metaClass}>
+                              {item.href ? (
+                                <a
+                                  class="project-record__meta-link"
+                                  href={item.href}
+                                  data-reference-link
+                                  data-reference-type={item.type}
+                                  data-analytics-link="reference"
+                                  data-analytics-label={item.value}
+                                  data-analytics-reference-type={item.type}
+                                  data-analytics-context-type="project"
+                                  data-analytics-context-label={project.title}
+                                >
+                                  <span class="project-record__meta-value">{item.value}</span>
+                                </a>
+                              ) : (
+                                <span class="project-record__meta-value">{item.value}</span>
+                              )}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  <span class="project-record__indicator" aria-hidden="true"></span>
+                </summary>
+
+                <div class="project-record__body">
+                  <StackBadges
+                    stacks={project.stacks}
+                    iconUrls={stackIconUrls}
+                    contextType="project"
+                    contextLabel={project.title}
+                  />
+                  {project.links.length > 0 && (
+                    <div class="external-links">
+                      {project.links.map((link) => (
+                        <a
+                          href={link.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          data-analytics-link="project"
+                          data-analytics-label={link.label}
+                          data-analytics-context-type="project"
+                          data-analytics-context-label={project.title}
+                        >
+                          <img class="ui-icon" src={iconForLink(link).src} alt="" loading="lazy" decoding="async" />
+                          <span>{link.label}</span>
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                  {project.sourceCode && (
+                    <aside class="project-source-note" aria-label={ui.sourceCodeScopeAria}>
+                      <span>{ui.sourceCodeScopeLabel}</span>
+                      <p>{project.sourceCode}</p>
+                    </aside>
+                  )}
+                  <div class="markdown-body project-content">
+                    {mockups.length > 0 && (
+                      <div
+                        class="project-mockups"
+                        aria-label={ui.projectScreenshotsLabel(project.title)}
+                        data-project-mockups
+                        data-analytics-label={project.title}
+                      >
+                        <div
+                          class="project-mockups__viewport"
+                          data-project-mockup-viewport
+                          data-lenis-prevent-touch
+                          tabindex="0"
+                        >
+                          <div class="project-mockups__track" data-project-mockup-track>
+                            {mockups.map((mockup, index) => (
+                              <div
+                                class="project-mockup"
+                                data-project-mockup-item
+                                style={`--project-mockup-ratio: ${mockup.width} / ${mockup.height};`}
+                              >
+                                <Image
+                                  src={mockup}
+                                  format="webp"
+                                  alt={ui.projectScreenshotAlt(project.title, index + 1)}
+                                  loading="lazy"
+                                  decoding="async"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {project.htmlBeforeProblemSolutions && (
+                      <div class="project-content__segment" set:html={project.htmlBeforeProblemSolutions} />
+                    )}
+                    <ProjectProblemSolutions items={project.problemSolutions} locale={locale} />
+                    {project.htmlAfterProblemSolutions && (
+                      <div class="project-content__segment" set:html={project.htmlAfterProblemSolutions} />
+                    )}
+                  </div>
+                </div>
+                    </details>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
+        </div>
+      </section>
+
+      <section id="licenses" class="section-shell" data-nav-section>
+        <div class="section-heading reveal">
+          <h2>{ui.sections.licenses}</h2>
+        </div>
+        <div class="credential-list" aria-label={ui.licensesListLabel}>
+          {portfolio.licenses.map((license) => (
+            <article id={license.id} class="credential-row reveal" data-highlight-target>
+              <time class="credential-date">{license.date}</time>
+              <div class="credential-main">
+                <img class="list-icon" src={iconForLicense(license).src} alt="" loading="lazy" decoding="async" />
+                <div>
+                  <h3>{license.name}</h3>
+                  <span class="credential-detail">{license.score ?? license.level}</span>
+                  {license.issuer && <small>{license.issuer}</small>}
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>© {new Date().getFullYear()} {portfolio.main.name}</span>
+      <a href="/fonts/D2Coding-NOTICE.txt" data-analytics-link="resource" data-analytics-label="D2Coding OFL notice">
+        D2Coding OFL notice
+      </a>
+    </footer>
+
+    <script src="../scripts/interactions.ts"></script>
+  </body>
+</html>

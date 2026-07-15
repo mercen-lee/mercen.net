@@ -23,6 +23,16 @@ const scrollDepthMilestones = [25, 50, 75, 90, 100];
 const trackedScrollDepths = new Set<number>();
 const trackedSectionViews = new Set<string>();
 
+for (const link of document.querySelectorAll<HTMLAnchorElement>('[data-language-link]')) {
+  link.addEventListener('click', () => {
+    if (!window.location.hash) return;
+
+    const target = new URL(link.href, window.location.href);
+    target.hash = window.location.hash;
+    link.href = target.href;
+  });
+}
+
 function applyPointerBackground(): void {
   pointerFrame = 0;
   root.style.setProperty('--pointer-x', `${pointerX.toFixed(1)}px`);
