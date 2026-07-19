@@ -354,7 +354,7 @@
     {
       "name": "JavaScript",
       "category": "language",
-      "aliases": ["JS"],
+      "aliases": ["JS", "JavaScript ES6+"],
       "icon": "./icons/tech-stacks/javascript.svg",
       "icon_source_stack": "JavaScript",
       "simple_icons_slug": "javascript",

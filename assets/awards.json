@@ -37,7 +37,7 @@
   },
   {
     "name": "Apple WWDC Swift Student Challenge",
-    "level": "우승",
+    "level": "Winner",
     "date": "2023-05-10",
     "project": "./projects/personal/allergist.md"
   },
@@ -53,7 +53,7 @@
   },
   {
     "name": "SW마이스터고 연합 해커톤",
-    "level": "AWS기업상",
+    "level": "AWS 기업상",
     "date": "2023-10-13"
   },
   {
@@ -69,12 +69,12 @@
   },
   {
     "name": "제 9회 하이톤",
-    "level": "인프런특별상",
+    "level": "인프런 특별상",
     "date": "2024-02-19"
   },
   {
     "name": "Apple WWDC Swift Student Challenge",
-    "level": "우승",
+    "level": "Winner",
     "date": "2024-03-29",
     "project": "./projects/personal/app-pilot.md"
   },

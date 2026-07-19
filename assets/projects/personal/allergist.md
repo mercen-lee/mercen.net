@@ -8,7 +8,7 @@ mockup_images:
   - ./allergist/allergist-3.webp
 period: 2023.04
 source_code: 소스 공개 · GitHub에서 iOS 앱 코드 확인 가능
-award: Apple WWDC Swift Student Challenge 2023 우승
+award: Swift Student Challenge Winner, 2023
 award_ref: ../../awards.json#/7
 related_projects:
   - ./app-pilot.md
@@ -28,7 +28,7 @@ tech_stacks:
 
 ## 개요
 
-Allergist는 사용자의 알레르기 정보에 기반해 **식품 알레르기 유발물질을 확인**할 수 있게 만든 iOS 서비스입니다. 식품 알레르기로 불편을 겪었던 개인 경험에서 출발했고, **[Apple WWDC Swift Student Challenge 2023](../../awards.json#/7) 우승작**으로 선정되었습니다.
+Allergist는 사용자의 알레르기 정보에 기반해 **식품 알레르기 유발물질을 확인**할 수 있게 만든 iOS 서비스입니다. 식품 알레르기로 불편을 겪었던 개인 경험에서 출발했고, **[Swift Student Challenge Winner, 2023](../../awards.json#/7)**로 선정되었습니다.
 
 미국 현지 공모전 맥락에 맞춰 알레르기 유발물질 분류 기준과 모든 문자열을 영어로 구성했습니다.
 
@@ -51,5 +51,5 @@ Allergist는 사용자의 알레르기 정보에 기반해 **식품 알레르기
 
 - **558,728건의 식품 데이터**를 앱 내부에서 다뤘습니다.
 - 초기 데이터 로딩 시간을 **약 1분에서 약 3초**로 줄였습니다.
-- **[WWDC Swift Student Challenge 2023](../../awards.json#/7) 우승작**으로 선정되었습니다.
-- 이후 [App Pilot](./app-pilot.md)까지 이어지는 Apple Swift Student Challenge 2회 연속 우승의 첫 번째 프로젝트가 되었습니다.
+- **[Swift Student Challenge Winner, 2023](../../awards.json#/7)**로 선정되었습니다.
+- 이후 [App Pilot](./app-pilot.md)까지 이어지는 2년 연속 Swift Student Challenge Winner의 첫 번째 프로젝트가 되었습니다.

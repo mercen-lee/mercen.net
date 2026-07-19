@@ -85,12 +85,12 @@ const ui = {
       solution: "해결",
     },
     ogImageAlt: (name: string) => `${name} 포트폴리오 미리보기 이미지`,
-    winnerLevel: "우승",
+    winnerLevel: "Winner",
     achievements: {
       gifted: "대구교육대학교 정보영재교육원 수료",
       isef: "국제과학기술경진대회 임베디드시스템 부문 Finalist",
       swiftChallenge: (count: number) =>
-        `Apple WWDC Swift Student Challenge ${count}회 연속 우승`,
+        `${count}년 연속 Swift Student Challenge Winner 선정`,
     },
     resume: {
       downloadTitle: "이력서 다운로드",

@@ -8,7 +8,7 @@ mockup_images:
   - ./app-pilot/app-pilot-3.webp
 period: 2024.02
 source_code: Source available · Swift Playgrounds project code is available
-award: Winner, Apple WWDC Swift Student Challenge 2024
+award: Swift Student Challenge Winner, 2024
 award_ref: ../../awards.json#/14
 related_projects:
   - ./allergist.md

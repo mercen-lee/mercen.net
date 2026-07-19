@@ -8,7 +8,7 @@ mockup_images:
   - ./allergist/allergist-3.webp
 period: 2023.04
 source_code: Source available · iOS app code is available on GitHub
-award: Winner, Apple WWDC Swift Student Challenge 2023
+award: Swift Student Challenge Winner, 2023
 award_ref: ../../awards.json#/7
 related_projects:
   - ./app-pilot.md

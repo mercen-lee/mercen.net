@@ -8,15 +8,15 @@
       "Sunnyvale, CA",
       "Seoul, Korea"
     ],
-    "description": "Contributed to improvements in the **Connector UI and datatype description architecture** of the SaaS automation product [**Interactor**](./projects/team/interactor.md).",
+    "description": "Developed the **Connector UI frontend** for the SaaS automation product [**Interactor**](./projects/team/interactor.md).",
     "responsibilities": [
-      "Improved frequently used interfaces including **Connector selection, Action and Authentication tests, developer navigation, and Billing screens**.",
+      "Designed and implemented **Connector selection, Action and Authentication tests, developer navigation, and Billing screens** with Phoenix LiveView and JavaScript.",
       "Resolved stale test results and clarified internal error presentation, creating a debugging experience that was easier for Connector developers to use.",
-      "Authored and reorganized **datatype description files** for Connector families including **Google, Slack, Salesforce, Notion, HubSpot, Jira, Mailchimp, and Microsoft**."
+      "Authored and reorganized **data-type description files** for Connector families including **Google, Slack, Salesforce, Notion, HubSpot, Jira, Mailchimp, and Microsoft**."
     ],
     "highlights": [
       "Experienced the end-to-end development workflow of a production SaaS product while working from both **Sunnyvale and the Seoul office**.",
-      "Worked with Connector datatype description structures across **more than eight service families**.",
+      "Worked with Connector data-type description structures across **more than eight service families**.",
       "Improved at least **four core administration surfaces**, including Authentication tests, Action tests, Connector selection, and Billing."
     ],
     "tech_stacks": [
@@ -35,18 +35,19 @@
     "display_name": "WHOFA",
     "role": "Flutter Developer",
     "period": "2025.09 ~ 2026.02",
-    "description": "Contributed to the **Flutter-based mobile and web application** [**WHOFA**](./projects/team/whofa.md), which connects fan and artist experiences.",
+    "description": "At [**WHOFA**](./projects/team/whofa.md), developed and maintained new iOS features in **Swift** and led the application's migration to **Flutter**.",
     "responsibilities": [
-      "Developed features and fixed defects in a **Flutter and Riverpod** codebase.",
-      "Worked across community, profile, Preplay detail, iOS-style navigation, deep linking, on-device databases, and media processing.",
+      "Developed new profile and community features for the iOS app in **Swift** and maintained existing functionality.",
+      "Led the migration to **Flutter and Riverpod**, implementing screen and state architecture, navigation, deep linking, and on-device data integration.",
       "Resolved user-facing issues including image downloads, audio attachment crashes, relative-time errors, tab selection defects, and stale state initialization."
     ],
     "highlights": [
-      "Contributed across **more than six product areas**, including community, profile, Preplay, deep linking, on-device data, and media processing.",
-      "Worked on a multiplatform Flutter project that included a **Flutter WebAssembly build path**.",
+      "Led the existing iOS application's **migration to Flutter** within a four-person product team.",
+      "Implemented new **profile and community features in Swift** and maintained the existing iOS application.",
       "Brought features to a user-visible level of polish, addressing **crashes, navigation, animation, and media edge cases**."
     ],
     "tech_stacks": [
+      "Swift",
       "Flutter",
       "Dart",
       "Riverpod",
@@ -65,7 +66,7 @@
     "display_name": "NextGen",
     "role": "Full-stack Developer",
     "period": "2026.03 ~ 2026.04",
-    "description": "Contributed to the **web, API, mobile, and infrastructure development** of [**Nextgen**](./projects/team/nextgen.md), an academy platform for the next generation of creators.",
+    "description": "Built the **web, API, mobile app, and AWS production environment** for [**NextGen**](./projects/team/nextgen.md), an academy platform for the next generation of creators, as its sole developer.",
     "responsibilities": [
       "Organized the **Next.js, Fastify, and Expo monorepo architecture and development environment**.",
       "Designed and implemented the core product flow connecting **course access, video protection, payments, user authentication, and production deployment**.",
@@ -74,7 +75,7 @@
     "highlights": [
       "Completed the course platform to a launch-ready standard within **approximately one month of development**.",
       "Recorded a **0% error rate at peak concurrency of roughly 1,000 users**.",
-      "Made a major contribution to the service reaching **KRW 60 million in daily revenue**.",
+      "Developed and operated a service with up to approximately **KRW 60 million in daily revenue**.",
       "Documented more than **six operational layers**—including AWS, Vercel, Cloudflare, EAS, SSM, and Secrets Manager—in a unified deployment guide."
     ],
     "tech_stacks": [

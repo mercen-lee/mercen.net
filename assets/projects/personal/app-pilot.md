@@ -8,7 +8,7 @@ mockup_images:
   - ./app-pilot/app-pilot-3.webp
 period: 2024.02
 source_code: 소스 공개 · Swift Playgrounds 프로젝트 코드 확인 가능
-award: Apple WWDC Swift Student Challenge 2024 우승
+award: Swift Student Challenge Winner, 2024
 award_ref: ../../awards.json#/14
 related_projects:
   - ./allergist.md
@@ -25,11 +25,11 @@ tech_stacks:
 
 ## 개요
 
-App Pilot은 **터치와 드래그만으로 컴포넌트를 조합해 실제 iOS 앱을 만들 수 있는** 노코드 앱 개발 서비스입니다. **[Apple WWDC Swift Student Challenge 2024](../../awards.json#/14) 우승작**으로 선정되었고, Swift Playgrounds 환경에서 실행되는 WYSIWYG 편집기를 목표로 만들었습니다.
+App Pilot은 **터치와 드래그만으로 컴포넌트를 조합해 실제 iOS 앱을 만들 수 있는** 노코드 앱 개발 서비스입니다. **[Swift Student Challenge Winner, 2024](../../awards.json#/14)**로 선정되었고, Swift Playgrounds 환경에서 실행되는 WYSIWYG 편집기를 목표로 만들었습니다.
 
 단순히 화면을 꾸미는 데서 끝내지 않고, 사용자가 구성한 화면 구조를 **SwiftUI 코드와 동일한 개념으로 표현하고 다시 앱으로 추출**할 수 있게 설계했습니다.
 
-[Allergist](./allergist.md)에 이어 **두 번째 Apple Swift Student Challenge 우승**으로 이어진 프로젝트이며, 이 성과를 계기로 WWDC24 기간 Apple Park에 초대받았습니다.
+[Allergist](./allergist.md)에 이어 **2년 연속 Swift Student Challenge Winner**로 선정된 프로젝트이며, 이 성과를 계기로 WWDC24 기간 Apple Park에 초대받았습니다.
 
 ## 내 역할
 
@@ -48,7 +48,7 @@ App Pilot은 **터치와 드래그만으로 컴포넌트를 조합해 실제 iOS
 
 ## 수치화된 성과
 
-- [WWDC Swift Student Challenge 2024](../../awards.json#/14) 우승작으로 선정되었습니다.
-- **Apple Swift Student Challenge 2회 연속 우승**을 달성했습니다.
+- [Swift Student Challenge Winner, 2024](../../awards.json#/14)로 선정되었습니다.
+- **2년 연속 Swift Student Challenge Winner**로 선정되었습니다.
 - Swift Playgrounds 단일 프로젝트 안에서 **편집, 미리보기, 코드 추출까지 하나의 흐름**으로 연결했습니다.
 - 컴포넌트별 대리자 구조를 도입해 렌더링과 Export 로직을 분리했고, 새 컴포넌트 추가 비용을 낮췄습니다.

@@ -8,15 +8,15 @@
       "Sunnyvale, CA",
       "Seoul, Korea"
     ],
-    "description": "SaaS 자동화 제품 [**Interactor**](./projects/team/interactor.md)의 **Connector UI와 datatype 설명 구조 개선에 참여**했습니다.",
+    "description": "SaaS 자동화 제품 [**Interactor**](./projects/team/interactor.md)의 **Connector UI 프론트엔드 개발을 담당**했습니다.",
     "responsibilities": [
-      "**Connector 선택, Action/Authentication Test, 개발자 navigation, Billing 화면** 등 반복 사용되는 UI를 개선했습니다.",
-      "**테스트 결과 갱신 문제와 내부 오류 표시 흐름을 개선**해 Connector 개발자가 디버깅하기 쉬운 UX를 만들었습니다.",
-      "**Google, Slack, Salesforce, Notion, HubSpot, Jira, Mailchimp, Microsoft** 계열 Connector의 **datatype 설명 파일을 작성**하고 구조를 정리했습니다."
+      "Phoenix LiveView와 JavaScript로 **Connector 선택, Action Test·Authentication Test, 개발자용 내비게이션, Billing 화면**을 구현했습니다.",
+      "**테스트 결과 갱신과 내부 오류 표시 흐름을 수정**해 Connector 개발자가 실패 원인을 바로 확인할 수 있게 했습니다.",
+      "**Google·Slack·Salesforce·Notion·HubSpot·Jira·Mailchimp·Microsoft** 계열 Connector의 **데이터 타입 설명 파일을 작성**하고 구조를 정리했습니다."
     ],
     "highlights": [
       "미국 **서니베일과 서울 지사**에서 실제 SaaS 제품 개발 흐름을 경험했습니다.",
-      "**8개 이상 서비스군**의 Connector datatype 설명 구조를 다뤘습니다.",
+      "**8개 이상 서비스군**의 Connector 데이터 타입 설명 파일을 정리했습니다.",
       "인증 테스트, Action Test, Connector 선택, Billing 등 **4개 이상의 핵심 관리 화면**을 개선했습니다."
     ],
     "tech_stacks": [
@@ -35,18 +35,19 @@
     "display_name": "WHOFA",
     "role": "Flutter Developer",
     "period": "2025.09 ~ 2026.02",
-    "description": "팬과 아티스트 경험을 연결하는 [**WHOFA**](./projects/team/whofa.md) **Flutter 기반 모바일/웹 앱 개발에 참여**했습니다.",
+    "description": "팬과 아티스트를 연결하는 [**WHOFA**](./projects/team/whofa.md)에서 **Swift 기반 iOS 기능을 개발·유지보수하고 Flutter 전환을 주도**했습니다.",
     "responsibilities": [
-      "**Flutter/Riverpod 기반 기능 개발과 버그 수정을 담당**했습니다.",
-      "**커뮤니티, 프로필, Preplay 상세 화면, iOS 스타일 navigation, 딥링크, 온디바이스 DB, 미디어 처리** 영역을 다뤘습니다.",
-      "**이미지 다운로드, 오디오 첨부 crash, 상대 시간/탭 선택/상태 초기화 버그** 등 사용자 경험에 직접 영향을 주는 문제를 해결했습니다."
+      "Swift로 iOS 앱의 **프로필·커뮤니티 신규 기능을 개발하고 기존 기능을 유지보수**했습니다.",
+      "**Flutter·Riverpod 기반 앱 전환을 주도**하고 화면·상태 구조, 내비게이션, 딥링크, 온디바이스 DB를 구현했습니다.",
+      "**이미지 다운로드 오류, 오디오 첨부 크래시, 상대 시간·탭 선택·상태 초기화 오류**를 수정했습니다."
     ],
     "highlights": [
-      "커뮤니티, 프로필, Preplay, 딥링크, 온디바이스 DB, 미디어 처리 등 **6개 이상의 기능 영역**을 다뤘습니다.",
-      "**Flutter WebAssembly 빌드 경로**까지 포함된 멀티플랫폼 Flutter 프로젝트에서 기여했습니다.",
-      "**crash, navigation, animation, media edge case**까지 사용자가 체감하는 완성도를 기준으로 마무리했습니다."
+      "4명 규모 제품팀에서 **기존 iOS 앱의 Flutter 전환을 주도**했습니다.",
+      "Swift 기반 **프로필·커뮤니티 신규 기능을 구현**하고 기존 기능을 유지보수했습니다.",
+      "**크래시·내비게이션·애니메이션·미디어 예외 상황**까지 확인하며 기능을 마무리했습니다."
     ],
     "tech_stacks": [
+      "Swift",
       "Flutter",
       "Dart",
       "Riverpod",
@@ -65,16 +66,16 @@
     "display_name": "NextGen",
     "role": "Full-stack Developer",
     "period": "2026.03 ~ 2026.04",
-    "description": "차세대 크리에이터 육성 아카데미 플랫폼 [**Nextgen**](./projects/team/nextgen.md)의 **웹, API, 모바일, 인프라 개발에 참여**했습니다.",
+    "description": "차세대 크리에이터 육성 아카데미 플랫폼 [**NextGen**](./projects/team/nextgen.md)의 **웹·API·모바일 앱과 AWS 운영 환경을 1인 개발 체제로 구축**했습니다.",
     "responsibilities": [
-      "**Next.js/Fastify/Expo 기반 monorepo 구조와 개발 환경을 정리**했습니다.",
+      "**Next.js·Fastify·Expo 기반 모노레포 구조와 개발 환경을 구축**했습니다.",
       "**강의 수강, 영상 보호, 결제, 사용자 인증, 운영 배포가 연결되는 핵심 제품 흐름을 설계하고 구현**했습니다.",
-      "**AWS EC2/ECR, nginx Blue-Green 배포, Vercel prebuilt 배포, Terraform 인프라, GitHub Actions CI/CD를 연결**했습니다."
+      "**AWS EC2·ECR, nginx 블루-그린 배포, Vercel 사전 빌드 배포, Terraform, GitHub Actions CI/CD를 구성**했습니다."
     ],
     "highlights": [
       "**약 1개월 개발 기간** 안에 강의 사이트를 출시 가능한 수준으로 완성했습니다.",
       "피크 타임 **동시 접속자 1,000명 규모에서도 오류율 0%를 기록**했습니다.",
-      "서비스 **일일 매출 6,000만 원 달성에 크게 기여**했습니다.",
+      "**일일 최대 매출 약 6,000만 원 규모의 서비스**를 개발·운영했습니다.",
       "AWS, Vercel, Cloudflare, EAS, SSM, Secrets Manager까지 **6개 이상의 운영 계층**을 하나의 배포 문서로 정리했습니다."
     ],
     "tech_stacks": [

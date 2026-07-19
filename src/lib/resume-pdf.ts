@@ -1,136 +1,131 @@
-import fs from 'node:fs';
-import { createRequire } from 'node:module';
-import path from 'node:path';
-import PDFDocument from 'pdfkit';
-import type {
-  CareerItem,
-  EducationItem,
-  PortfolioData,
-  ProjectItem,
-} from './content';
-import { getUi, type Locale } from './i18n';
+import fs from "node:fs";
+import path from "node:path";
+import PDFDocument from "pdfkit";
+import SVGtoPDF from "svg-to-pdfkit";
+import type { PortfolioData } from "./content";
+import type { Locale } from "./i18n";
 
-const require = createRequire(import.meta.url);
-const SVGtoPDF = require('svg-to-pdfkit') as (
-  doc: PDFKit.PDFDocument,
-  svg: string,
-  x: number,
-  y: number,
-  options?: { width?: number; height?: number; preserveAspectRatio?: string },
-) => void;
-
-const PAGE_MARGIN_X = 52;
-const PAGE_MARGIN_TOP = 54;
-const PAGE_MARGIN_BOTTOM = 48;
-const TIMELINE_LEFT_WIDTH = 148;
-const ENTRY_LEFT_WIDTH = 142;
-const ENTRY_BODY_GAP = 28;
-const ENTRY_MARKER_OFFSET_X = 8;
-const ENTRY_TITLE_SIZE = 14;
-const ENTRY_META_SIZE = 8.6;
-const ENTRY_SUBTITLE_SIZE = 9.8;
-const ENTRY_BODY_SIZE = 9.2;
-const ENTRY_BULLET_SIZE = 8.9;
-const ENTRY_STACK_SIZE = 8.5;
-const INTRO_TEXT_WIDTH = 464;
-const CONTACT_ICON_SIZE = 12;
-const CONTACT_ICON_Y = 1.05;
-const CONTACT_TEXT_SIZE = 9.7;
-const PILL_HEIGHT = 22;
-const PILL_GAP = 7;
-const PRIMARY_STACKS = [
-  'TypeScript / React / Next.js',
-  'Swift / SwiftUI',
-  'Flutter / Dart',
-  'Rust / Tauri',
-  'PostgreSQL / SQLite',
-  'AWS / Vercel / GitHub Actions',
-] as const;
-const REQUESTED_PROJECT_TITLES = ['Toongether', 'DodamDodam', 'Allermi', 'BL Agent', 'Desktop Fushi', 'FlowKit'] as const;
+const PAGE_MARGIN_X = 46;
+const PAGE_MARGIN_TOP = 42;
 
 const fonts = {
-  regular: 'WantedSansRegular',
-  semibold: 'WantedSansSemiBold',
-  bold: 'WantedSansBold',
+  regular: "WantedSansRegular",
+  semibold: "WantedSansSemiBold",
+  bold: "WantedSansBold",
 } as const;
 
 const fontPaths = {
-  regular: path.resolve(process.cwd(), 'public/fonts/WantedSans-Regular.ttf'),
-  semibold: path.resolve(process.cwd(), 'public/fonts/WantedSans-SemiBold.ttf'),
-  bold: path.resolve(process.cwd(), 'public/fonts/WantedSans-Bold.ttf'),
+  regular: path.resolve(process.cwd(), "public/fonts/WantedSans-Regular.ttf"),
+  semibold: path.resolve(process.cwd(), "public/fonts/WantedSans-SemiBold.ttf"),
+  bold: path.resolve(process.cwd(), "public/fonts/WantedSans-Bold.ttf"),
 };
 
-const profileImagePath = path.resolve(process.cwd(), 'assets/images/personal/profile.jpg');
-const iconPaths = {
-  email: path.resolve(process.cwd(), 'assets/icons/mail.svg'),
-  github: path.resolve(process.cwd(), 'assets/icons/brand-github.svg'),
-  linkedin: path.resolve(process.cwd(), 'assets/icons/brand-linkedin.svg'),
-  birth: path.resolve(process.cwd(), 'assets/icons/calendar-days.svg'),
-} as const;
+const profileImagePath = path.resolve(
+  process.cwd(),
+  "assets/images/personal/profile.jpg",
+);
+
+const techStackConfigPath = path.resolve(
+  process.cwd(),
+  "assets/tech_stacks.json",
+);
 
 const colors = {
-  text: '#262626',
-  muted: '#777777',
-  faint: '#a1a1a1',
-  line: '#d9d9d9',
-  lineStrong: '#2f2f2f',
-  pillBorder: '#dedede',
-  pillBg: '#fbfbfb',
-  page: '#ffffff',
+  text: "#202020",
+  muted: "#606060",
+  faint: "#929292",
+  line: "#d8d8d8",
+  lineStrong: "#202020",
+  page: "#ffffff",
 };
 
-type Cursor = {
-  y: number;
-};
-
-type TimelineRenderItem = {
+type CareerEntry = {
+  company: string;
+  role: string;
   period: string;
-  meta?: string;
+  meta: string;
+  summary: string;
+  bullets: string[];
+};
+
+type ProjectEntry = {
   title: string;
-  subtitle?: string;
-  description?: string;
-  bullets?: string[];
-  stacks?: string[];
+  period: string;
+  meta: string;
+  description: string;
+  stacks: string[];
+  link?: string;
 };
 
-type ProjectResumeRecord = {
-  project: ProjectItem;
-  roleItems: string[];
-  contributionItems: string[];
+type SkillEntry = {
+  label: string;
+  stacks: string[];
 };
 
-type RichSegment = {
-  bold: boolean;
-  text: string;
+type AwardEntry = {
+  period: string;
+  title: string;
+  detail: string;
 };
 
-export async function generateResumePdf(portfolio: PortfolioData, locale: Locale = 'ko'): Promise<Buffer> {
-  const resumeUi = getUi(locale).resume;
+type TechStackDefinition = {
+  name: string;
+  aliases?: string[];
+  icon?: string;
+};
+
+type ResumeCopy = {
+  documentLabel: string;
+  jobTitle: string;
+  sectionLabels: {
+    profile: string;
+    skills: string;
+    experience: string;
+    projects: string;
+    education: string;
+    awards: string;
+    credentials: string;
+  };
+  summary: string;
+  skills: SkillEntry[];
+  careers: CareerEntry[];
+  projects: ProjectEntry[];
+  education: Array<{ period: string; title: string; detail: string }>;
+  awards: AwardEntry[];
+  credentials: string[];
+};
+
+export async function generateResumePdf(
+  portfolio: PortfolioData,
+  locale: Locale = "ko",
+): Promise<Buffer> {
+  const copy = getCopy(locale);
 
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({
       autoFirstPage: false,
       bufferPages: true,
       margin: 0,
-      size: 'A4',
+      size: "A4",
       info: {
-        Title: `${portfolio.main.name} ${resumeUi.documentLabel}`,
+        Title: `${portfolio.main.name} ${copy.documentLabel}`,
         Author: portfolio.main.name,
-        Subject: `${resumeUi.jobTitle} ${resumeUi.documentLabel}`,
-        Creator: 'mercen.net',
+        Subject: copy.jobTitle,
+        Creator: "mercen.net",
       },
     });
     const chunks: Buffer[] = [];
 
-    doc.on('data', (chunk: Buffer) => chunks.push(chunk));
-    doc.on('end', () => resolve(Buffer.concat(chunks)));
-    doc.on('error', reject);
+    doc.on("data", (chunk: Buffer) => chunks.push(chunk));
+    doc.on("end", () => resolve(Buffer.concat(chunks)));
+    doc.on("error", reject);
 
     try {
       registerFonts(doc);
       addPage(doc);
-      drawResume(doc, portfolio, locale);
-      drawPageNumbers(doc);
+      drawFirstPage(doc, portfolio, copy, locale);
+      addPage(doc);
+      drawSecondPage(doc, portfolio, copy, locale);
       doc.end();
     } catch (error) {
       reject(error);
@@ -138,946 +133,1089 @@ export async function generateResumePdf(portfolio: PortfolioData, locale: Locale
   });
 }
 
-function registerFonts(doc: PDFKit.PDFDocument): void {
-  for (const [label, fontPath] of Object.entries(fontPaths)) {
-    if (!fs.existsSync(fontPath)) {
-      throw new Error(`Missing Wanted Sans font file for PDF resume: ${fontPath}`);
-    }
+function getCopy(locale: Locale): ResumeCopy {
+  if (locale === "en") {
+    return {
+      documentLabel: "Resume",
+      jobTitle: "Software Engineer",
+      sectionLabels: {
+        profile: "Profile",
+        skills: "Technical Skills",
+        experience: "Experience",
+        projects: "Selected Projects",
+        education: "Education",
+        awards: "Awards",
+        credentials: "Credentials",
+      },
+      summary:
+        "Software engineer who has shipped and operated products spanning web, APIs, mobile applications, and cloud infrastructure. Owned Connector UI frontend development at Pulzze Systems, and developed and maintained iOS features in Swift while leading WHOFA's migration to Flutter. Strong at narrowing down failures and automating repetitive operational work.",
+      skills: [
+        {
+          label: "Production",
+          stacks: [
+            "TypeScript",
+            "React",
+            "Next.js",
+            "Fastify",
+            "PostgreSQL",
+            "Redis",
+            "SQLite",
+            "AWS",
+            "Vercel",
+            "GitHub Actions",
+            "Terraform",
+            "Flutter",
+            "Dart",
+            "Riverpod",
+          ],
+        },
+        {
+          label: "Additional",
+          stacks: [
+            "Python",
+            "Java",
+            "JavaScript",
+            "Swift",
+            "SwiftUI",
+            "Rust",
+            "Tauri",
+            "Elixir",
+            "Phoenix",
+            "LiveView",
+          ],
+        },
+      ],
+      careers: [
+        {
+          company: "NextGen",
+          role: "Full-stack Developer (Contract)",
+          period: "2026.03 - 2026.04",
+          meta: "Sole developer / 1 month",
+          summary:
+            "Built the web, API, mobile, and infrastructure for a creator academy platform.",
+          bullets: [
+            "Built payments, course access, DRM, authentication, and AWS deployment as one operating flow.",
+            "Built a Next.js, Fastify, and Expo monorepo with PostgreSQL, Redis, Terraform, and GitHub Actions.",
+            "Launched in one month; supported about 1,000 peak concurrent users at a 0% operating error rate and about KRW 60 million in daily revenue.",
+          ],
+        },
+        {
+          company: "WHOFA",
+          role: "Flutter Developer",
+          period: "2025.09 - 2026.02",
+          meta: "4-person product team",
+          summary:
+            "Developed and maintained new iOS features in Swift and led the product's migration to Flutter.",
+          bullets: [
+            "Developed new profile and community features in Swift and maintained the existing iOS application.",
+            "Led the migration to Flutter and Riverpod, implementing screen, state, navigation, deep-link, and local-data flows.",
+            "Reproduced and fixed audio crashes, image downloads, stale state, navigation, and animation edge cases.",
+          ],
+        },
+        {
+          company: "Pulzze Systems",
+          role: "Software Engineer Intern",
+          period: "2024.06 - 2025.02",
+          meta: "6-person global team",
+          summary:
+            "Developed the Connector UI frontend for the SaaS automation product Interactor.",
+          bullets: [
+            "Improved 4+ administration and test surfaces: Action and Authentication tests, Connector selection, and Billing.",
+            "Authored data-type descriptions for 8+ service families, including Google, Slack, Salesforce, and Notion.",
+            "Worked two months in Sunnyvale, three in Seoul, then remotely from school.",
+          ],
+        },
+      ],
+      projects: [
+        {
+          title: "BL Agent",
+          period: "2026.06 - Present",
+          meta: "Client project / Desktop workflow automation",
+          description:
+            "Desktop workflow for ingesting B/L PDFs, extracting and validating structured fields, reviewing evidence, and exporting to an existing XLS format. The application automates work previously handled by six employees.",
+          stacks: ["React", "TypeScript", "Tauri", "Rust", "SQLite"],
+        },
+        {
+          title: "App Pilot",
+          period: "2024.02",
+          meta: "Swift Student Challenge Winner, 2024",
+          description:
+            "WYSIWYG no-code editor that turns a touch-built view hierarchy into an exportable Swift Playgrounds package.",
+          stacks: ["Swift", "SwiftUI", "Swift Playgrounds"],
+          link: "https://github.com/Mercen-Lee/App-Pilot",
+        },
+        {
+          title: "Allergist",
+          period: "2023.04",
+          meta: "Swift Student Challenge Winner, 2023",
+          description:
+            "Offline food-allergen explorer for 558,728 records. Reduced initial loading from about one minute to about three seconds.",
+          stacks: ["Swift", "SwiftUI", "Property List"],
+          link: "https://github.com/Mercen-Lee/Allergist",
+        },
+        {
+          title: "Toongether",
+          period: "2022.09 - 2024.09",
+          meta: "iOS / SK Smarteen App+ Challenge 2023 Top Excellence",
+          description:
+            "iOS development and product leadership; incorporated feedback from about 300 readers and 10 creators.",
+          stacks: ["Swift", "SwiftUI", "TCA", "Alamofire", "FlowKit"],
+          link: "https://github.com/toongether-legacy",
+        },
+        {
+          title: "DodamDodam",
+          period: "2023.03 - 2024.04",
+          meta: "iOS / School-life product",
+          description:
+            "Maintained a school-life iOS service for about 234 students and staff for roughly one year, shipping 10 releases.",
+          stacks: ["Swift", "SwiftUI", "Swift Concurrency", "Tuist", "Moya"],
+          link: "https://github.com/Team-B1ND/dodamdodam-ios",
+        },
+      ],
+      education: [
+        {
+          period: "2022.03 - 2025.02",
+          title: "Daegu Software Meister High School",
+          detail: "Department of AI Software / Graduated",
+        },
+      ],
+      awards: loadAwards("en"),
+      credentials: [
+        "Industrial Engineer Information Processing",
+        "Microsoft AI-900",
+        "TOEIC 815",
+        "TOPCIT 570",
+      ],
+    };
+  }
 
-    doc.registerFont(fonts[label as keyof typeof fonts], fontPath);
+  return {
+    documentLabel: "이력서",
+    jobTitle: "소프트웨어 엔지니어",
+    sectionLabels: {
+      profile: "소개",
+      skills: "기술",
+      experience: "경력",
+      projects: "주요 프로젝트",
+      education: "학력",
+      awards: "수상",
+      credentials: "자격 및 어학",
+    },
+    summary:
+      "웹·API·모바일 앱·클라우드 인프라를 연결해 실제 서비스를 출시하고 운영해 왔습니다.\nNextGen에서는 결제·권한·DRM 영상 접근·AWS 배포 흐름을 1인 개발 체제로 구축했습니다.\nPulzze Systems에서는 Connector UI 프론트엔드 개발을, WHOFA에서는 Swift 기반 iOS 기능 개발·유지보수와 Flutter 전환을 주도했습니다.\n문제를 재현해 원인을 좁히고, 해결 과정을 코드·자동화·문서로 남기는 데 강점이 있습니다.",
+    skills: [
+      {
+        label: "실무",
+        stacks: [
+          "TypeScript",
+          "React",
+          "Next.js",
+          "Fastify",
+          "PostgreSQL",
+          "Redis",
+          "SQLite",
+          "AWS",
+          "Vercel",
+          "GitHub Actions",
+          "Terraform",
+          "Flutter",
+          "Dart",
+          "Riverpod",
+        ],
+      },
+      {
+        label: "기타",
+        stacks: [
+          "Python",
+          "Java",
+          "JavaScript",
+          "Swift",
+          "SwiftUI",
+          "Rust",
+          "Tauri",
+          "Elixir",
+          "Phoenix",
+          "LiveView",
+        ],
+      },
+    ],
+    careers: [
+      {
+        company: "NextGen",
+        role: "풀스택 개발자 (계약직)",
+        period: "2026.03 - 2026.04",
+        meta: "1인 개발 / 약 1개월",
+        summary:
+          "크리에이터 아카데미의 웹·API·모바일·인프라를 1인 개발 체제로 구축했습니다.",
+        bullets: [
+          "결제, 수강 권한, DRM, 사용자 인증, AWS 배포가 이어지는 핵심 흐름을 설계·구현했습니다.",
+          "Next.js·Fastify·Expo 모노레포와 PostgreSQL·Redis, Terraform, GitHub Actions 운영 환경을 구성했습니다.",
+          "약 1개월 내 출시했으며 피크 동시 접속 약 1,000명, 운영 오류율 0%, 일일 최대 매출 규모 약 6,000만 원을 기록한 서비스를 운영했습니다.",
+        ],
+      },
+      {
+        company: "WHOFA",
+        role: "Flutter 개발자",
+        period: "2025.09 - 2026.02",
+        meta: "4인 제품팀",
+        summary:
+          "Swift 기반 iOS 신규 기능을 개발·유지보수하고 Flutter 전환을 주도했습니다.",
+        bullets: [
+          "Swift 기반 iOS 버전의 프로필·커뮤니티 신규 기능을 개발하고 기존 기능을 유지보수했습니다.",
+          "Flutter·Riverpod 전환을 주도하고 화면·상태·내비게이션·딥링크·온디바이스 DB 구조를 구현했습니다.",
+          "오디오 첨부 크래시, 이미지 다운로드, 상태 초기화, 탐색·애니메이션 문제를 재현하고 수정했습니다.",
+        ],
+      },
+      {
+        company: "Pulzze Systems",
+        role: "소프트웨어 엔지니어 인턴",
+        period: "2024.06 - 2025.02",
+        meta: "6인 글로벌 개발팀",
+        summary:
+          "SaaS 자동화 제품 Interactor의 Connector UI 프론트엔드 개발을 담당했습니다.",
+        bullets: [
+          "Action·Authentication Test, Connector 선택, Billing 등 4개 이상의 관리·테스트 화면을 개선했습니다.",
+          "Google·Slack·Salesforce·Notion 등 8개 이상 서비스군의 데이터 타입 설명 파일을 작성하고 정리했습니다.",
+          "미국 서니베일 2개월, 서울 3개월, 이후 학교 원격 근무로 글로벌 제품 개발 흐름을 경험했습니다.",
+        ],
+      },
+    ],
+    projects: [
+      {
+        title: "BL Agent",
+        period: "2026.06 - 현재",
+        meta: "클라이언트 프로젝트 / 데스크톱 업무 자동화",
+        description:
+          "B/L PDF를 불러와 구조화된 필드를 추출·검증하고, 근거와 함께 검토한 뒤 기존 XLS 양식으로 내보내는 데스크톱 업무 도구입니다. 직원 6명이 수행하던 문서 처리 업무를 하나의 앱으로 자동화했습니다.",
+        stacks: ["React", "TypeScript", "Tauri", "Rust", "SQLite"],
+      },
+      {
+        title: "App Pilot",
+        period: "2024.02",
+        meta: "Swift Student Challenge Winner, 2024",
+        description:
+          "터치로 구성한 화면 구조를 Swift Playgrounds 패키지로 내보낼 수 있는 WYSIWYG 노코드 편집기입니다.",
+        stacks: ["Swift", "SwiftUI", "Swift Playgrounds"],
+        link: "https://github.com/Mercen-Lee/App-Pilot",
+      },
+      {
+        title: "Allergist",
+        period: "2023.04",
+        meta: "Swift Student Challenge Winner, 2023",
+        description:
+          "558,728건의 식품 정보를 오프라인에서 탐색하는 알레르기 확인 앱입니다. 초기 로딩을 약 1분에서 약 3초로 줄였습니다.",
+        stacks: ["Swift", "SwiftUI", "Property List"],
+        link: "https://github.com/Mercen-Lee/Allergist",
+      },
+      {
+        title: "Toongether",
+        period: "2022.09 - 2024.09",
+        meta: "iOS / SK Smarteen App+ Challenge 2023 최우수상",
+        description:
+          "iOS 개발과 제품 리딩을 맡아 독자 약 300명과 작가 10여 명의 피드백을 반영했습니다.",
+        stacks: ["Swift", "SwiftUI", "TCA", "Alamofire", "FlowKit"],
+        link: "https://github.com/toongether-legacy",
+      },
+      {
+        title: "DodamDodam",
+        period: "2023.03 - 2024.04",
+        meta: "iOS / 교내 스마트 스쿨 서비스",
+        description:
+          "학생 약 200명과 교직원 약 34명이 사용하는 iOS 서비스를 약 1년간 유지보수하며 10개 버전을 출시했습니다.",
+        stacks: ["Swift", "SwiftUI", "Swift Concurrency", "Tuist", "Moya"],
+        link: "https://github.com/Team-B1ND/dodamdodam-ios",
+      },
+    ],
+    education: [
+      {
+        period: "2022.03 - 2025.02",
+        title: "대구소프트웨어마이스터고등학교",
+        detail: "인공지능소프트웨어과 / 졸업",
+      },
+    ],
+    awards: loadAwards("ko"),
+    credentials: [
+      "정보처리산업기사",
+      "Microsoft AI-900",
+      "TOEIC 815",
+      "TOPCIT 570",
+    ],
+  };
+}
+
+function drawFirstPage(
+  doc: PDFKit.PDFDocument,
+  portfolio: PortfolioData,
+  copy: ResumeCopy,
+  locale: Locale,
+): void {
+  let y = PAGE_MARGIN_TOP;
+  y = drawHeader(doc, portfolio, copy, locale, y);
+
+  y = drawSectionHeading(doc, "01", copy.sectionLabels.profile, y);
+  doc.font(fonts.regular).fontSize(9.7).fillColor(colors.text);
+  doc.text(copy.summary, PAGE_MARGIN_X, y, {
+    lineGap: 4,
+    width: contentWidth(doc),
+  });
+  y +=
+    doc.heightOfString(copy.summary, {
+      lineGap: 4,
+      width: contentWidth(doc),
+    }) + 16;
+
+  y = drawSectionHeading(doc, "02", copy.sectionLabels.skills, y);
+  y = drawSkillRows(doc, copy.skills, y) + 13;
+
+  y = drawSectionHeading(doc, "03", copy.sectionLabels.experience, y);
+  for (const [index, career] of copy.careers.entries()) {
+    y = drawCareerEntry(
+      doc,
+      career,
+      y,
+      index === copy.careers.length - 1,
+      locale === "en",
+    );
   }
 }
 
-function drawResume(doc: PDFKit.PDFDocument, portfolio: PortfolioData, locale: Locale): void {
-  const cursor: Cursor = { y: PAGE_MARGIN_TOP };
-  const resumeUi = getUi(locale).resume;
+function drawSecondPage(
+  doc: PDFKit.PDFDocument,
+  portfolio: PortfolioData,
+  copy: ResumeCopy,
+  locale: Locale,
+): void {
+  let y = drawContinuationHeader(doc, portfolio, copy, locale, PAGE_MARGIN_TOP);
+  y = drawSectionHeading(doc, "04", copy.sectionLabels.projects, y);
 
-  drawHeader(doc, cursor, portfolio, resumeUi.jobTitle);
+  y = drawProjectsGrid(doc, copy.projects, y) + 15;
 
-  drawSectionHeading(doc, cursor, resumeUi.sections.primaryStacks, { minFollowingHeight: 54 });
-  drawPrimaryStackSection(doc, cursor);
+  const columnGap = 24;
+  const leftWidth = (contentWidth(doc) - columnGap) / 2;
+  const rightX = PAGE_MARGIN_X + leftWidth + columnGap;
+  const rightWidth = leftWidth;
+  const columnTop = y;
 
-  drawSectionHeading(doc, cursor, resumeUi.sections.about, { minFollowingHeight: 90 });
-  drawParagraphs(doc, cursor, htmlParagraphs(portfolio.main.html), {
-    lineGap: 4,
-    paragraphGap: 10,
-    size: 10.2,
-    width: INTRO_TEXT_WIDTH,
-  });
-
-  drawSectionHeading(doc, cursor, resumeUi.sections.education, { minFollowingHeight: 78 });
-  drawTimeline(doc, cursor, portfolio.educations.map(educationToTimelineItem));
-
-  addPage(doc);
-  cursor.y = PAGE_MARGIN_TOP;
-  drawCareerPage(doc, cursor, portfolio.careers, resumeUi.sections.career);
-
-  const requestedProjects = selectRequestedProjects(
-    portfolio.projects,
-    resumeUi.roleSectionHeading,
-    resumeUi.resultsSectionHeading,
+  let leftY = drawSectionHeading(
+    doc,
+    "05",
+    copy.sectionLabels.education,
+    columnTop,
+    PAGE_MARGIN_X,
+    leftWidth,
   );
-  addPage(doc);
-  cursor.y = PAGE_MARGIN_TOP;
-  drawProjectPage(doc, cursor, resumeUi.sections.teamProjects, requestedProjects.slice(0, 3), {
-    contribution: resumeUi.projectContribution,
-    role: resumeUi.projectRole,
-  });
-
-  addPage(doc);
-  cursor.y = PAGE_MARGIN_TOP;
-  drawProjectPage(doc, cursor, resumeUi.sections.personalProjects, requestedProjects.slice(3, 6), {
-    contribution: resumeUi.projectContribution,
-    role: resumeUi.projectRole,
-  });
-
-  drawSectionHeading(doc, cursor, resumeUi.sections.awards, { minFollowingHeight: 42 });
-  for (const award of portfolio.awards) {
-    drawCredentialRow(doc, cursor, {
-      date: formatDate(award.date),
-      title: award.name,
-      detail: award.level,
-    });
+  for (const item of copy.education) {
+    leftY = drawCredentialItem(
+      doc,
+      item.period,
+      item.title,
+      item.detail,
+      PAGE_MARGIN_X,
+      leftY,
+      leftWidth,
+    );
   }
 
-  drawSectionHeading(doc, cursor, resumeUi.sections.licenses, { minFollowingHeight: 42 });
-  for (const license of portfolio.licenses) {
-    drawCredentialRow(doc, cursor, {
-      date: formatDate(license.date),
-      title: license.name,
-      detail: [license.score ?? license.level, license.issuer].filter(Boolean).join(' / '),
-    });
-  }
+  let rightY = drawSectionHeading(
+    doc,
+    "06",
+    copy.sectionLabels.credentials,
+    columnTop,
+    rightX,
+    rightWidth,
+  );
+  rightY = drawCredentials(
+    doc,
+    copy.credentials,
+    rightX,
+    rightY,
+    rightWidth,
+    true,
+  );
+
+  y = Math.max(leftY, rightY) + 10;
+  y = drawSectionHeading(doc, "07", copy.sectionLabels.awards, y);
+  drawAwardsGrid(doc, copy.awards, y);
 }
 
 function drawHeader(
   doc: PDFKit.PDFDocument,
-  cursor: Cursor,
   portfolio: PortfolioData,
-  jobTitle: string,
-): void {
-  const contentWidth = getContentWidth(doc);
-  const photoWidth = 96;
-  const photoHeight = 116;
-  const photoX = PAGE_MARGIN_X + contentWidth - photoWidth;
-  const startY = cursor.y;
-  const textWidth = contentWidth - photoWidth - 28;
+  copy: ResumeCopy,
+  locale: Locale,
+  y: number,
+): number {
+  const photoWidth = 82;
+  const photoHeight = 82;
+  const photoX = PAGE_MARGIN_X;
+  const blockY = y + 48;
+  const detailsX = photoX + photoWidth + 24;
+  const detailsWidth = contentWidth(doc) - photoWidth - 24;
 
   doc
     .font(fonts.bold)
-    .fontSize(30)
+    .fontSize(27)
     .fillColor(colors.text)
-    .text(portfolio.main.name, PAGE_MARGIN_X, startY, { width: textWidth });
-
+    .text(copy.documentLabel, PAGE_MARGIN_X, y, {
+      lineBreak: false,
+      width: contentWidth(doc),
+    });
   doc
-    .font(fonts.semibold)
-    .fontSize(11)
-    .fillColor(colors.muted)
-    .text(jobTitle, PAGE_MARGIN_X, startY + 42, { width: textWidth });
+    .font(fonts.bold)
+    .fontSize(21)
+    .fillColor(colors.text)
+    .text(portfolio.main.name, detailsX, blockY, {
+      lineBreak: false,
+      width: detailsWidth,
+    });
 
-  const contactRows = [
-    { kind: 'email' as const, value: portfolio.main.email },
-    { kind: 'github' as const, value: urlLastSegment(portfolio.main.github) },
-    { kind: 'linkedin' as const, value: urlLastSegment(portfolio.main.linkedin) },
-    { kind: 'birth' as const, value: portfolio.main.birth_date },
-  ].filter((item): item is { kind: ContactIconKind; value: string } => Boolean(item.value));
-
-  const contactStartY = startY + 66;
-  const columnWidth = Math.floor((textWidth - 18) / 2);
-
-  contactRows.forEach((item, index) => {
-    const column = index % 2;
+  const fields = locale === "ko"
+    ? [
+        ["전화번호", "010-9990-4136"],
+        ["생년월일", portfolio.main.birth_date ?? "2006.02.17"],
+        ["이메일", portfolio.main.email ?? "mercen@mercen.net"],
+        ["거주지", "서울특별시 관악구"],
+      ]
+    : [
+        ["Phone", "+82 10-9990-4136"],
+        ["Date of birth", portfolio.main.birth_date ?? "2006.02.17"],
+        ["Email", portfolio.main.email ?? "mercen@mercen.net"],
+        ["Residence", "Gwanak-gu, Seoul"],
+      ];
+  const gap = 18;
+  const fieldWidth = (detailsWidth - gap) / 2;
+  for (const [index, [label, value]] of fields.entries()) {
     const row = Math.floor(index / 2);
-    drawContactItem(
-      doc,
-      item.kind,
-      item.value,
-      PAGE_MARGIN_X + column * (columnWidth + 18),
-      contactStartY + row * 24,
-      columnWidth,
-    );
-  });
-
-  if (fs.existsSync(profileImagePath)) {
-    drawProfilePhoto(doc, photoX, startY - 4, photoWidth, photoHeight);
+    const column = index % 2;
+    const x = detailsX + column * (fieldWidth + gap);
+    const fieldY = blockY + 38 + row * 36;
+    doc
+      .moveTo(x, fieldY - 5)
+      .lineTo(x + fieldWidth, fieldY - 5)
+      .lineWidth(0.45)
+      .strokeColor(colors.line)
+      .stroke();
+    doc.font(fonts.regular).fontSize(7.2).fillColor(colors.faint).text(label, x, fieldY, {
+      lineBreak: false,
+      width: fieldWidth,
+    });
+    doc.font(fonts.semibold).fontSize(9.2).fillColor(colors.text).text(value, x, fieldY + 13, {
+      lineBreak: false,
+      width: fieldWidth,
+    });
   }
 
-  cursor.y = Math.max(startY + photoHeight + 22, contactStartY + Math.ceil(contactRows.length / 2) * 24 + 22);
-}
+  if (fs.existsSync(profileImagePath)) {
+    doc.image(profileImagePath, photoX, blockY, {
+      fit: [photoWidth, photoHeight],
+      valign: "center",
+      align: "center",
+    });
+  }
 
-function drawPrimaryStackSection(doc: PDFKit.PDFDocument, cursor: Cursor): void {
-  const height = drawPills(doc, [...PRIMARY_STACKS], PAGE_MARGIN_X, cursor.y, getContentWidth(doc), {
-    fontSize: 9,
-    height: 22,
-  });
-
-  cursor.y += height + 16;
-}
-
-function drawProfilePhoto(doc: PDFKit.PDFDocument, x: number, y: number, width: number, height: number): void {
-  doc.save();
-  doc.roundedRect(x, y, width, height, 16).clip();
-  doc.image(profileImagePath, x, y, {
-    align: 'center',
-    cover: [width, height],
-    valign: 'center',
-  });
-  doc.restore();
-
-  doc.roundedRect(x, y, width, height, 16).lineWidth(0.8).strokeColor(colors.line).stroke();
-}
-
-type ContactIconKind = 'email' | 'github' | 'linkedin' | 'birth';
-
-function drawContactItem(
-  doc: PDFKit.PDFDocument,
-  kind: ContactIconKind,
-  value: string,
-  x: number,
-  y: number,
-  width: number,
-): void {
-  drawContactIcon(doc, kind, x, y + CONTACT_ICON_Y, CONTACT_ICON_SIZE);
   doc
-    .font(fonts.regular)
-    .fontSize(CONTACT_TEXT_SIZE)
-    .fillColor(colors.text)
-    .text(value, x + 22, y + 0.9, { width: width - 22, lineBreak: false });
+    .moveTo(PAGE_MARGIN_X, y + 148)
+    .lineTo(doc.page.width - PAGE_MARGIN_X, y + 148)
+    .lineWidth(0.55)
+    .strokeColor(colors.line)
+    .stroke();
+
+  return y + 163;
 }
 
-function drawContactIcon(doc: PDFKit.PDFDocument, kind: ContactIconKind, x: number, y: number, size: number): void {
-  const svg = loadIconSvg(kind);
-
-  doc.save();
-  SVGtoPDF(doc, svg, x, y, {
-    height: size,
-    preserveAspectRatio: 'xMidYMid meet',
-    width: size,
-  });
-  doc.restore();
+function drawContinuationHeader(
+  doc: PDFKit.PDFDocument,
+  portfolio: PortfolioData,
+  copy: ResumeCopy,
+  locale: Locale,
+  y: number,
+): number {
+  void doc;
+  void portfolio;
+  void copy;
+  void locale;
+  return y;
 }
 
 function drawSectionHeading(
   doc: PDFKit.PDFDocument,
-  cursor: Cursor,
+  index: string,
   title: string,
-  options: { minFollowingHeight?: number; rightText?: string } = {},
-): void {
-  ensureSpace(doc, cursor, 48 + (options.minFollowingHeight ?? 0));
-
-  doc.font(fonts.bold).fontSize(15).fillColor(colors.text).text(title, PAGE_MARGIN_X, cursor.y, {
-    lineBreak: false,
-    width: getContentWidth(doc) / 2,
-  });
-
-  if (options.rightText) {
-    doc.font(fonts.regular).fontSize(9.2).fillColor(colors.faint).text(options.rightText, PAGE_MARGIN_X, cursor.y + 3, {
-      align: 'right',
+  y: number,
+  x = PAGE_MARGIN_X,
+  width = contentWidth(doc),
+): number {
+  void index;
+  doc
+    .font(fonts.bold)
+    .fontSize(13)
+    .fillColor(colors.text)
+    .text(title, x, y, {
       lineBreak: false,
-      width: getContentWidth(doc),
+      width,
     });
+  doc
+    .moveTo(x, y + 25)
+    .lineTo(x + width, y + 25)
+    .lineWidth(0.55)
+    .strokeColor(colors.line)
+    .stroke();
+  return y + 37;
+}
+
+function drawSkillRows(
+  doc: PDFKit.PDFDocument,
+  rows: ResumeCopy["skills"],
+  y: number,
+): number {
+  const labelWidth = 62;
+  const width = contentWidth(doc);
+  let currentY = y + 5;
+
+  doc
+    .moveTo(PAGE_MARGIN_X, y - 5)
+    .lineTo(PAGE_MARGIN_X + width, y - 5)
+    .lineWidth(0.45)
+    .strokeColor(colors.line)
+    .stroke();
+  for (const [index, row] of rows.entries()) {
+    doc
+      .font(fonts.semibold)
+      .fontSize(8.3)
+      .fillColor(colors.muted)
+      .text(row.label, PAGE_MARGIN_X, currentY + 1, {
+        lineBreak: false,
+        width: labelWidth,
+      });
+    const stackHeight = drawStackLabels(
+      doc,
+      row.stacks,
+      PAGE_MARGIN_X + labelWidth + 12,
+      currentY,
+      width - labelWidth - 12,
+      { fontSize: 7.2, iconSize: 8.4, lineHeight: 15 },
+    );
+    const rowHeight = Math.max(30, stackHeight + 8);
+    currentY += rowHeight;
+
+    if (index === 0) {
+      doc
+        .moveTo(PAGE_MARGIN_X, currentY - 3)
+        .lineTo(PAGE_MARGIN_X + width, currentY - 3)
+        .lineWidth(0.4)
+        .strokeColor(colors.line)
+        .stroke();
+    }
   }
 
   doc
-    .moveTo(PAGE_MARGIN_X, cursor.y + 25)
-    .lineTo(PAGE_MARGIN_X + getContentWidth(doc), cursor.y + 25)
-    .lineWidth(1)
-    .strokeColor(colors.lineStrong)
+    .moveTo(PAGE_MARGIN_X, currentY - 3)
+    .lineTo(PAGE_MARGIN_X + width, currentY - 3)
+    .lineWidth(0.45)
+    .strokeColor(colors.line)
     .stroke();
 
-  cursor.y += 43;
-}
-
-function drawParagraphs(
-  doc: PDFKit.PDFDocument,
-  cursor: Cursor,
-  paragraphs: string[],
-  options: { size: number; lineGap: number; paragraphGap: number; width?: number },
-): void {
-  if (paragraphs.length === 0) return;
-
-  const width = options.width ?? getContentWidth(doc);
-  doc.font(fonts.regular).fontSize(options.size).fillColor(colors.text);
-  const totalHeight = paragraphs.reduce((sum, paragraph, index) => {
-    const paragraphHeight = measureInlineText(doc, paragraph, width, options);
-
-    return sum + paragraphHeight + (index === paragraphs.length - 1 ? 0 : options.paragraphGap);
-  }, 0);
-
-  ensureSpace(doc, cursor, totalHeight + 14);
-
-  for (const paragraph of paragraphs) {
-    cursor.y = drawInlineText(doc, paragraph, PAGE_MARGIN_X, cursor.y, width, options);
-    cursor.y += options.paragraphGap;
-  }
-
-  cursor.y += 16;
-}
-
-function drawTimeline(doc: PDFKit.PDFDocument, cursor: Cursor, items: TimelineRenderItem[]): void {
-  for (const [index, item] of items.entries()) {
-    const height = measureTimelineItem(doc, item);
-    ensureSpace(doc, cursor, height + 16);
-
-    const top = cursor.y;
-    const dotX = PAGE_MARGIN_X + 7;
-    const bodyX = PAGE_MARGIN_X + TIMELINE_LEFT_WIDTH;
-    const bodyWidth = getContentWidth(doc) - TIMELINE_LEFT_WIDTH;
-
-    doc.circle(dotX, top + 7, 4).lineWidth(1.5).strokeColor(colors.text).stroke();
-    doc.moveTo(dotX, top + 17).lineTo(dotX, top + height).lineWidth(0.8).strokeColor(colors.line).stroke();
-    if (index === items.length - 1) {
-      doc.circle(dotX, top + height, 2.1).fillColor(colors.line).fill();
-    }
-
-    doc.font(fonts.semibold).fontSize(9.4).fillColor(colors.text).text(item.period, PAGE_MARGIN_X + 22, top, {
-      width: TIMELINE_LEFT_WIDTH - 34,
-    });
-
-    if (item.meta) {
-      doc.font(fonts.regular).fontSize(8.6).fillColor(colors.faint).text(item.meta, PAGE_MARGIN_X + 22, top + 18, {
-        width: TIMELINE_LEFT_WIDTH - 34,
-      });
-    }
-
-    let bodyY = top;
-    doc.font(fonts.bold).fontSize(14).fillColor(colors.text).text(item.title, bodyX, bodyY, {
-      width: bodyWidth,
-    });
-    bodyY += 19;
-
-    if (item.subtitle) {
-      doc.font(fonts.semibold).fontSize(9.8).fillColor(colors.text).text(item.subtitle, bodyX, bodyY, {
-        width: bodyWidth,
-      });
-      bodyY += 17;
-    }
-
-    if (item.description) {
-      bodyY = drawInlineText(doc, item.description, bodyX, bodyY + 2, bodyWidth, {
-        size: 9.2,
-        lineGap: 3,
-      }) + 8;
-    }
-
-    if (item.stacks && item.stacks.length > 0) {
-      const pillHeight = drawPills(doc, item.stacks.slice(0, 12), bodyX, bodyY, bodyWidth, {
-        fontSize: 8.5,
-        height: 20,
-      });
-      bodyY += pillHeight + 8;
-    }
-
-    for (const bullet of item.bullets ?? []) {
-      bodyY = drawBullet(doc, bullet, bodyX, bodyY, bodyWidth) + 5;
-    }
-
-    cursor.y = Math.max(top + height + 14, bodyY + 8);
-  }
-}
-
-function measureTimelineItem(doc: PDFKit.PDFDocument, item: TimelineRenderItem): number {
-  const bodyWidth = getContentWidth(doc) - TIMELINE_LEFT_WIDTH;
-  let height = 22;
-
-  if (item.subtitle) height += 17;
-  if (item.description) {
-    height += measureInlineText(doc, item.description, bodyWidth, { lineGap: 3, size: 9.2 }) + 10;
-  }
-  if (item.stacks && item.stacks.length > 0) {
-    height += measurePillRows(doc, item.stacks.slice(0, 12), bodyWidth, { fontSize: 8.5, height: 20 }) + 8;
-  }
-  for (const bullet of item.bullets ?? []) {
-    height += measureInlineText(doc, bullet, bodyWidth - 12, { lineGap: 2, size: 8.9 }) + 5;
-  }
-
-  return Math.max(height, 58);
-}
-
-function drawCareerPage(
-  doc: PDFKit.PDFDocument,
-  cursor: Cursor,
-  careers: CareerItem[],
-  sectionTitle: string,
-): void {
-  drawSectionHeading(doc, cursor, sectionTitle, { minFollowingHeight: 620 });
-
-  const rowGap = 12;
-  const availableHeight = doc.page.height - PAGE_MARGIN_BOTTOM - cursor.y;
-  const rowHeight = Math.floor((availableHeight - rowGap * (careers.length - 1)) / careers.length);
-
-  for (const [index, career] of careers.entries()) {
-    drawCareerEntry(doc, cursor, career, rowHeight, index === careers.length - 1);
-    cursor.y += rowGap;
-  }
+  return currentY + 2;
 }
 
 function drawCareerEntry(
   doc: PDFKit.PDFDocument,
-  cursor: Cursor,
-  career: CareerItem,
-  height: number,
+  career: CareerEntry,
+  y: number,
   isLast: boolean,
-): void {
-  const x = PAGE_MARGIN_X;
-  const y = cursor.y;
-  const width = getContentWidth(doc);
-  const bodyX = x + ENTRY_LEFT_WIDTH + ENTRY_BODY_GAP;
-  const bodyWidth = width - ENTRY_LEFT_WIDTH - ENTRY_BODY_GAP;
-  const markerX = x + ENTRY_LEFT_WIDTH + ENTRY_MARKER_OFFSET_X;
+  compact = false,
+): number {
+  const periodWidth = 102;
+  const bodyX = PAGE_MARGIN_X + periodWidth + 19;
+  const bodyWidth = contentWidth(doc) - periodWidth - 19;
+  const startY = y;
 
-  doc.circle(markerX, y + 8, 3.2).lineWidth(1.2).strokeColor(colors.text).stroke();
-  doc.moveTo(markerX, y + 18).lineTo(markerX, y + height - 4).lineWidth(0.65).strokeColor(colors.line).stroke();
-
-  doc.font(fonts.semibold).fontSize(ENTRY_SUBTITLE_SIZE).fillColor(colors.text).text(formatPeriod(career.period), x, y + 1, {
-    lineBreak: false,
-    width: ENTRY_LEFT_WIDTH - 6,
-  });
-
-  if (career.locations && career.locations.length > 0) {
-    doc.font(fonts.regular).fontSize(ENTRY_META_SIZE).fillColor(colors.faint).text(career.locations.join(' / '), x, y + 19, {
-      width: ENTRY_LEFT_WIDTH - 6,
+  doc
+    .font(fonts.semibold)
+    .fontSize(8.5)
+    .fillColor(colors.text)
+    .text(career.period, PAGE_MARGIN_X, y + 1, {
+      lineBreak: false,
+      width: periodWidth,
     });
+  doc
+    .font(fonts.regular)
+    .fontSize(8)
+    .fillColor(colors.faint)
+    .text(career.meta, PAGE_MARGIN_X, y + 18, {
+      lineGap: 2,
+      width: periodWidth,
+    });
+
+  doc
+    .circle(bodyX - 12, y + 6, 2.6)
+    .fillColor(colors.text)
+    .fill();
+  doc
+    .font(fonts.bold)
+    .fontSize(11.3)
+    .fillColor(colors.text)
+    .text(career.company, bodyX, y, {
+      lineBreak: false,
+      width: bodyWidth,
+    });
+  const companyWidth = doc.widthOfString(career.company);
+  doc
+    .font(fonts.semibold)
+    .fontSize(8.5)
+    .fillColor(colors.muted)
+    .text(career.role, bodyX + companyWidth + 12, y + 2.3, {
+      lineBreak: false,
+      width: Math.max(80, bodyWidth - companyWidth - 12),
+    });
+  y += 20;
+
+  doc
+    .font(fonts.regular)
+    .fontSize(compact ? 8.45 : 8.9)
+    .fillColor(colors.text)
+    .text(career.summary, bodyX, y, {
+      lineGap: compact ? 1.7 : 2.3,
+      width: bodyWidth,
+    });
+  y +=
+    doc.heightOfString(career.summary, {
+      lineGap: compact ? 1.7 : 2.3,
+      width: bodyWidth,
+    }) + (compact ? 5 : 7);
+
+  for (const bullet of career.bullets) {
+    doc
+      .circle(bodyX + 2.2, y + 5.5, 1.15)
+      .fillColor(colors.muted)
+      .fill();
+    doc
+      .font(fonts.regular)
+      .fontSize(compact ? 8.1 : 8.6)
+      .fillColor(colors.muted)
+      .text(bullet, bodyX + 10, y, {
+        lineGap: compact ? 1.4 : 2.1,
+        width: bodyWidth - 10,
+      });
+    y +=
+      doc.heightOfString(bullet, {
+        lineGap: compact ? 1.4 : 2.1,
+        width: bodyWidth - 10,
+      }) + (compact ? 3.2 : 4.5);
   }
 
-  doc.font(fonts.bold).fontSize(ENTRY_TITLE_SIZE).fillColor(colors.text).text(career.display_name ?? career.company, bodyX, y, {
-    lineBreak: false,
-    width: bodyWidth,
-  });
-  doc.font(fonts.semibold).fontSize(ENTRY_SUBTITLE_SIZE).fillColor(colors.text).text(career.role, bodyX, y + 18, {
-    lineBreak: false,
-    width: bodyWidth,
-  });
-
-  let bodyY = y + 40;
-  if (career.description) {
-    bodyY = drawInlineText(doc, career.description, bodyX, bodyY, bodyWidth, {
-      lineGap: 1.8,
-      size: ENTRY_BODY_SIZE,
-    }) + 7;
-  }
-
-  const bullets = [...(career.responsibilities ?? []), ...(career.highlights ?? [])].slice(0, 4);
-  for (const bullet of bullets) {
-    if (bodyY > y + height - 42) break;
-    bodyY = drawEntryBullet(doc, bullet, bodyX, bodyY, bodyWidth) + 4;
-  }
-
-  const stacks = career.stacks.map((stack) => stack.name).slice(0, 8);
-  if (stacks.length > 0) {
-    drawStackLine(doc, stacks, bodyX, y + height - 22, bodyWidth, ENTRY_STACK_SIZE);
-  }
-
+  const bottom = Math.max(y + (compact ? 4 : 6), startY + (compact ? 82 : 90));
   if (!isLast) {
     doc
-      .moveTo(bodyX, y + height)
-      .lineTo(x + width, y + height)
-      .lineWidth(0.45)
+      .moveTo(bodyX, bottom - 1)
+      .lineTo(PAGE_MARGIN_X + contentWidth(doc), bottom - 1)
+      .lineWidth(0.4)
       .strokeColor(colors.line)
       .stroke();
   }
-
-  cursor.y += height;
+  return bottom + (isLast ? 0 : 4);
 }
 
-function drawProjectPage(
+function drawProjectsGrid(
   doc: PDFKit.PDFDocument,
-  cursor: Cursor,
-  title: string,
-  records: ProjectResumeRecord[],
-  labels: { role: string; contribution: string },
-): void {
-  drawSectionHeading(doc, cursor, title, { minFollowingHeight: 650 });
+  projects: ProjectEntry[],
+  y: number,
+): number {
+  const columnGap = 24;
+  const columnWidth = (contentWidth(doc) - columnGap) / 2;
+  const rows = Math.ceil(projects.length / 2);
+  let currentY = y;
 
-  const gap = 12;
-  const rowHeight = Math.floor((doc.page.height - PAGE_MARGIN_BOTTOM - cursor.y - gap * 2) / 3);
+  for (let row = 0; row < rows; row += 1) {
+    const rowProjects = projects.slice(row * 2, row * 2 + 2);
+    const heights = rowProjects.map((project) =>
+      measureProjectEntry(doc, project, columnWidth),
+    );
+    const rowHeight = Math.max(...heights, 78);
 
-  for (const [index, record] of records.entries()) {
-    drawProjectResumeEntry(doc, cursor, record, rowHeight, index === records.length - 1, labels);
-    cursor.y += gap;
+    for (const [column, project] of rowProjects.entries()) {
+      const x = PAGE_MARGIN_X + column * (columnWidth + columnGap);
+      drawProjectEntry(doc, project, x, currentY, columnWidth, rowHeight);
+    }
+    currentY += rowHeight + 10;
   }
+
+  return currentY - 10;
 }
 
-function drawProjectResumeEntry(
+function measureProjectEntry(
   doc: PDFKit.PDFDocument,
-  cursor: Cursor,
-  record: ProjectResumeRecord,
-  height: number,
-  isLast: boolean,
-  labels: { role: string; contribution: string },
-): void {
-  const { project } = record;
-  const x = PAGE_MARGIN_X;
-  const y = cursor.y;
-  const width = getContentWidth(doc);
-  const leftWidth = ENTRY_LEFT_WIDTH;
-  const rightX = x + leftWidth + ENTRY_BODY_GAP;
-  const rightWidth = width - leftWidth - ENTRY_BODY_GAP;
-  const markerX = x + leftWidth + ENTRY_MARKER_OFFSET_X;
-
-  doc.circle(markerX, y + 8, 2.8).fillColor(colors.text).fill();
-  doc.moveTo(markerX, y + 18).lineTo(markerX, y + height - 2).lineWidth(0.6).strokeColor(colors.line).stroke();
-
-  doc.font(fonts.bold).fontSize(ENTRY_TITLE_SIZE).fillColor(colors.text).text(project.title, x, y, {
-    lineBreak: false,
-    width: leftWidth - 12,
+  project: ProjectEntry,
+  width: number,
+): number {
+  doc.font(fonts.semibold).fontSize(7.2);
+  const metaHeight = doc.heightOfString(project.meta, {
+    lineGap: 1.4,
+    width,
   });
-
-  const meta = [formatPeriod(project.period), project.team, project.award].filter(Boolean).join(' / ');
-  let leftY = y + 44;
-  if (meta) {
-    doc.font(fonts.regular).fontSize(ENTRY_META_SIZE).fillColor(colors.faint);
-    const metaHeight = doc.heightOfString(meta, {
-      width: leftWidth - 12,
-    });
-    doc.text(meta, x, y + 19, {
-      width: leftWidth - 12,
-    });
-    leftY = Math.max(leftY, y + 19 + metaHeight + 10);
-  }
-
-  if (project.description) {
-    leftY = drawInlineText(doc, project.description, x, leftY, leftWidth - 12, {
-      lineGap: 1.8,
-      size: ENTRY_BODY_SIZE,
-    }) + 9;
-  }
-
-  drawStackLine(doc, project.stacks.map((stack) => stack.name).slice(0, 7), x, leftY, leftWidth - 12, ENTRY_STACK_SIZE);
-
-  const roleEnd = drawSmallSection(doc, labels.role, record.roleItems.slice(0, 3), rightX, y, rightWidth, y + height - 8);
-  drawSmallSection(
+  doc.font(fonts.regular).fontSize(8.2);
+  const descriptionHeight = doc.heightOfString(project.description, {
+    lineGap: 2,
+    width,
+  });
+  const stackHeight = measureStackLabels(
     doc,
-    labels.contribution,
-    record.contributionItems.slice(0, 3),
-    rightX,
-    Math.max(roleEnd + 9, y + 96),
-    rightWidth,
-    y + height - 8,
+    project.stacks,
+    width,
+    { fontSize: 6.8, iconSize: 8, lineHeight: 14 },
   );
-
-  if (!isLast) {
-    doc
-      .moveTo(x, y + height)
-      .lineTo(x + width, y + height)
-      .lineWidth(0.45)
-      .strokeColor(colors.line)
-      .stroke();
-  }
-
-  cursor.y += height;
+  return 18 + metaHeight + 5 + descriptionHeight + 7 + stackHeight + 12;
 }
 
-function drawSmallSection(
+function drawProjectEntry(
   doc: PDFKit.PDFDocument,
+  project: ProjectEntry,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+): void {
+  const periodWidth = 92;
+  doc
+    .font(fonts.bold)
+    .fontSize(10.5)
+    .fillColor(colors.text)
+    .text(project.title, x, y, {
+      link: project.link,
+      lineBreak: false,
+      width: width - periodWidth - 8,
+    });
+  doc
+    .font(fonts.regular)
+    .fontSize(7.2)
+    .fillColor(colors.faint)
+    .text(project.period, x + width - periodWidth, y + 2, {
+      align: "right",
+      lineBreak: false,
+      width: periodWidth,
+    });
+
+  let currentY = y + 18;
+  doc
+    .font(fonts.semibold)
+    .fontSize(7.2)
+    .fillColor(colors.muted)
+    .text(project.meta, x, currentY, {
+      lineGap: 1.4,
+      width,
+    });
+  currentY +=
+    doc.heightOfString(project.meta, { lineGap: 1.4, width }) + 5;
+
+  doc
+    .font(fonts.regular)
+    .fontSize(8.2)
+    .fillColor(colors.text)
+    .text(project.description, x, currentY, {
+      lineGap: 2,
+      link: project.link,
+      width,
+    });
+  currentY +=
+    doc.heightOfString(project.description, { lineGap: 2, width }) + 7;
+  drawStackLabels(doc, project.stacks, x, currentY, width, {
+    fontSize: 6.8,
+    iconSize: 8,
+    lineHeight: 14,
+  });
+
+  doc
+    .moveTo(x, y + height - 3)
+    .lineTo(x + width, y + height - 3)
+    .lineWidth(0.4)
+    .strokeColor(colors.line)
+    .stroke();
+}
+
+function drawCredentialItem(
+  doc: PDFKit.PDFDocument,
+  period: string,
   title: string,
+  detail: string,
+  x: number,
+  y: number,
+  width: number,
+): number {
+  doc
+    .font(fonts.semibold)
+    .fontSize(7.4)
+    .fillColor(colors.faint)
+    .text(period, x, y, {
+      lineBreak: false,
+      width,
+    });
+  doc
+    .font(fonts.semibold)
+    .fontSize(8.8)
+    .fillColor(colors.text)
+    .text(title, x, y + 17, {
+      lineGap: 1.8,
+      width,
+    });
+  const titleHeight = doc.heightOfString(title, {
+    lineGap: 1.8,
+    width,
+  });
+  doc
+    .font(fonts.regular)
+    .fontSize(8.1)
+    .fillColor(colors.muted)
+    .text(detail, x, y + 17 + titleHeight + 3, {
+      lineGap: 1.8,
+      width,
+    });
+  const detailHeight = doc.heightOfString(detail, {
+    lineGap: 1.8,
+    width,
+  });
+  return y + 17 + titleHeight + detailHeight + 11;
+}
+
+function drawCredentials(
+  doc: PDFKit.PDFDocument,
   items: string[],
   x: number,
   y: number,
   width: number,
-  maxY: number,
+  compact = false,
 ): number {
-  doc.font(fonts.bold).fontSize(ENTRY_BODY_SIZE).fillColor(colors.text).text(title, x, y, {
-    lineBreak: false,
-    width,
-  });
-
-  let bodyY = y + 14;
-  for (const item of items) {
-    if (bodyY > maxY - 16) break;
-    bodyY = drawSmallBullet(doc, item, x, bodyY, width) + 3;
-  }
-
-  return bodyY;
-}
-
-function drawEntryBullet(doc: PDFKit.PDFDocument, text: string, x: number, y: number, width: number): number {
-  doc.circle(x + 2.7, y + 5.6, 1.35).fillColor(colors.text).fill();
-  return drawInlineText(doc, text, x + 10, y, width - 10, {
-    lineGap: 1.4,
-    size: ENTRY_BULLET_SIZE,
-  });
-}
-
-function drawSmallBullet(doc: PDFKit.PDFDocument, text: string, x: number, y: number, width: number): number {
-  return drawEntryBullet(doc, text, x, y, width);
-}
-
-function drawStackLine(
-  doc: PDFKit.PDFDocument,
-  values: string[],
-  x: number,
-  y: number,
-  width: number,
-  size: number,
-): void {
-  if (values.length === 0) return;
-
-  doc.font(fonts.semibold).fontSize(size).fillColor(colors.faint).text('Stack', x, y, {
-    lineBreak: false,
-    width: 30,
-  });
-  doc.font(fonts.regular).fontSize(size);
-  const stackText = compactStackLine(doc, values, width - 36);
-  doc.fillColor(colors.muted).text(stackText, x + 36, y, {
-    lineBreak: false,
-    width: width - 36,
-  });
-}
-
-function compactStackLine(doc: PDFKit.PDFDocument, values: string[], width: number): string {
-  const separator = ' / ';
-  const fullText = values.join(separator);
-  if (doc.widthOfString(fullText) <= width) return fullText;
-
-  for (let visibleCount = values.length - 1; visibleCount >= 1; visibleCount -= 1) {
-    const remainingCount = values.length - visibleCount;
-    const candidate = `${values.slice(0, visibleCount).join(separator)}${separator}+${remainingCount}`;
-    if (doc.widthOfString(candidate) <= width) return candidate;
-  }
-
-  return `+${values.length}`;
-}
-
-function drawCredentialRow(
-  doc: PDFKit.PDFDocument,
-  cursor: Cursor,
-  item: { date: string; title: string; detail?: string },
-): void {
-  const height = item.detail ? 32 : 25;
-  ensureSpace(doc, cursor, height + 5);
-
-  doc.font(fonts.semibold).fontSize(8.8).fillColor(colors.faint).text(item.date, PAGE_MARGIN_X, cursor.y + 2, {
-    width: 78,
-  });
-  doc.font(fonts.semibold).fontSize(9.6).fillColor(colors.text).text(item.title, PAGE_MARGIN_X + 94, cursor.y, {
-    width: getContentWidth(doc) - 94,
-  });
-
-  if (item.detail) {
-    doc.font(fonts.regular).fontSize(8.6).fillColor(colors.muted).text(item.detail, PAGE_MARGIN_X + 94, cursor.y + 15, {
-      width: getContentWidth(doc) - 94,
-    });
-  }
-
-  doc
-    .moveTo(PAGE_MARGIN_X + 94, cursor.y + height)
-    .lineTo(PAGE_MARGIN_X + getContentWidth(doc), cursor.y + height)
-    .lineWidth(0.4)
-    .strokeColor(colors.line)
-    .stroke();
-
-  cursor.y += height + 5;
-}
-
-function drawInlineText(
-  doc: PDFKit.PDFDocument,
-  text: string,
-  x: number,
-  y: number,
-  width: number,
-  options: { size: number; lineGap: number },
-): number {
-  return layoutRichText(doc, text, x, y, width, options, true);
-}
-
-function drawBullet(doc: PDFKit.PDFDocument, text: string, x: number, y: number, width: number): number {
-  doc.circle(x + 3, y + 6.5, 1.7).fillColor(colors.text).fill();
-  return drawInlineText(doc, text, x + 12, y, width - 12, {
-    lineGap: 2,
-    size: 8.9,
-  });
-}
-
-function drawPills(
-  doc: PDFKit.PDFDocument,
-  values: string[],
-  x: number,
-  y: number,
-  width: number,
-  options: { fontSize?: number; height?: number } = {},
-): number {
-  const fontSize = options.fontSize ?? 8.8;
-  const pillHeight = options.height ?? PILL_HEIGHT;
-  let currentX = x;
   let currentY = y;
-  const maxX = x + width;
-
-  doc.font(fonts.semibold).fontSize(fontSize);
-
-  for (const value of values) {
-    const pillWidth = Math.min(width, Math.ceil(doc.widthOfString(value) + 22));
-    if (currentX > x && currentX + pillWidth > maxX) {
-      currentX = x;
-      currentY += pillHeight + PILL_GAP;
-    }
-
-    doc.roundedRect(currentX, currentY, pillWidth, pillHeight, pillHeight / 2).fillAndStroke(colors.pillBg, colors.pillBorder);
-    doc.fillColor(colors.text).text(value, currentX + 11, currentY + (pillHeight - fontSize) / 2 - 1.1, {
-      align: 'center',
-      lineBreak: false,
-      width: pillWidth - 22,
-    });
-    currentX += pillWidth + PILL_GAP;
+  for (const item of items) {
+    doc
+      .circle(x + 2, currentY + 5, 1.2)
+      .fillColor(colors.muted)
+      .fill();
+    doc
+      .font(fonts.regular)
+      .fontSize(compact ? 8.1 : 8.7)
+      .fillColor(colors.text)
+      .text(item, x + 10, currentY, {
+        width: width - 10,
+      });
+    currentY += compact ? 18 : 23;
   }
-
-  return currentY + pillHeight - y;
+  return currentY;
 }
 
-function measurePillRows(
+function drawAwardsGrid(
   doc: PDFKit.PDFDocument,
-  values: string[],
-  width: number,
-  options: { fontSize?: number; height?: number } = {},
+  awards: AwardEntry[],
+  y: number,
 ): number {
-  const fontSize = options.fontSize ?? 8.8;
-  const pillHeight = options.height ?? PILL_HEIGHT;
-  let rows = 1;
-  let currentWidth = 0;
+  const columnGap = 24;
+  const columnWidth = (contentWidth(doc) - columnGap) / 2;
+  const itemsPerColumn = Math.ceil(awards.length / 2);
+  const columns = [
+    awards.slice(0, itemsPerColumn),
+    awards.slice(itemsPerColumn),
+  ];
+  let bottom = y;
 
-  doc.font(fonts.semibold).fontSize(fontSize);
+  for (const [column, items] of columns.entries()) {
+    const x = PAGE_MARGIN_X + column * (columnWidth + columnGap);
+    let currentY = y;
 
-  for (const value of values) {
-    const pillWidth = Math.min(width, Math.ceil(doc.widthOfString(value) + 22));
-    if (currentWidth > 0 && currentWidth + PILL_GAP + pillWidth > width) {
-      rows += 1;
-      currentWidth = pillWidth;
-    } else {
-      currentWidth += (currentWidth > 0 ? PILL_GAP : 0) + pillWidth;
+    for (const item of items) {
+      const periodWidth = 42;
+      const bodyX = x + periodWidth;
+      const bodyWidth = columnWidth - periodWidth;
+      const label = `${item.title} · ${item.detail}`;
+
+      doc
+        .font(fonts.regular)
+        .fontSize(6.8)
+        .fillColor(colors.faint)
+        .text(item.period, x, currentY + 1, {
+          lineBreak: false,
+          width: periodWidth - 5,
+        });
+      doc
+        .font(fonts.semibold)
+        .fontSize(7.2)
+        .fillColor(colors.text)
+        .text(label, bodyX, currentY, {
+          lineGap: 1.4,
+          width: bodyWidth,
+        });
+      const labelHeight = doc.heightOfString(label, {
+        lineGap: 1.4,
+        width: bodyWidth,
+      });
+      currentY += Math.max(19, labelHeight + 5);
     }
+    bottom = Math.max(bottom, currentY);
   }
 
-  return rows * pillHeight + (rows - 1) * PILL_GAP;
+  return bottom;
 }
 
-function educationToTimelineItem(education: EducationItem): TimelineRenderItem {
-  return {
-    period: formatPeriod(education.period),
-    meta: education.role,
-    title: education.name,
-    description: education.description,
-    bullets: (education.highlights ?? []).slice(0, 3),
-  };
+type StackLabelOptions = {
+  fontSize: number;
+  iconSize: number;
+  lineHeight: number;
+};
+
+let techStackIconPaths: Map<string, string | undefined> | undefined;
+const stackSvgCache = new Map<string, string>();
+
+function loadAwards(locale: Locale): AwardEntry[] {
+  const awardPath = path.resolve(
+    process.cwd(),
+    locale === "ko" ? "assets/awards.json" : "assets/locales/en/awards.json",
+  );
+  const source = JSON.parse(fs.readFileSync(awardPath, "utf8")) as Array<{
+    name: string;
+    level?: string;
+    date: string;
+  }>;
+
+  return source
+    .slice()
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map((item) => ({
+      period: item.date.slice(0, 7).replace("-", "."),
+      title: item.name,
+      detail: item.level ?? "",
+    }));
 }
 
-function selectRequestedProjects(
-  projects: ProjectItem[],
-  roleSectionHeading: string,
-  resultsSectionHeading: string,
-): ProjectResumeRecord[] {
-  const projectsByTitle = new Map(projects.map((project) => [project.title, project]));
-
-  return REQUESTED_PROJECT_TITLES.map((title) => {
-    const project = projectsByTitle.get(title);
-    if (!project) throw new Error(`Missing project for PDF resume: ${title}`);
-
-    return {
-      project,
-      roleItems: extractHtmlSectionItems(project, roleSectionHeading, true),
-      contributionItems: extractHtmlSectionItems(project, resultsSectionHeading, false),
-    };
-  });
-}
-
-function extractHtmlSectionItems(project: ProjectItem, heading: string, fallbackToDescription: boolean): string[] {
-  const html = [project.htmlBeforeProblemSolutions, project.htmlAfterProblemSolutions].filter(Boolean).join('\n');
-  const sectionPattern = new RegExp(`<h2[^>]*>\\s*${escapeRegExp(heading)}\\s*</h2>([\\s\\S]*?)(?=<h2\\b|$)`, 'i');
-  const section = sectionPattern.exec(html)?.[1] ?? '';
-  const items = [...section.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)].map((match) => match[1].trim());
-
-  if (items.length > 0) return items;
-
-  return fallbackToDescription
-    ? [project.description ?? '']
-    : project.problemSolutions.map((item) => item.solutionHtml);
-}
-
-function htmlParagraphs(html: string): string[] {
-  const paragraphMatches = [...html.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)].map((match) => match[1].trim());
-
-  if (paragraphMatches.length > 0) {
-    return paragraphMatches.filter(Boolean);
-  }
-
-  return html
-    .split(/\n{2,}/)
-    .map((paragraph) => paragraph.trim())
-    .filter(Boolean);
-}
-
-function measureInlineText(
+function measureStackLabels(
   doc: PDFKit.PDFDocument,
-  text: string,
+  stacks: string[],
   width: number,
-  options: { size: number; lineGap: number },
+  options: StackLabelOptions,
 ): number {
-  return layoutRichText(doc, text, 0, 0, width, options, false);
+  return layoutStackLabels(doc, stacks, 0, 0, width, options, false);
 }
 
-function layoutRichText(
+function drawStackLabels(
   doc: PDFKit.PDFDocument,
-  text: string,
+  stacks: string[],
   x: number,
   y: number,
   width: number,
-  options: { size: number; lineGap: number },
-  shouldDraw: boolean,
+  options: StackLabelOptions,
 ): number {
-  const segments = parseRichText(text);
-  if (segments.length === 0) return y;
+  return layoutStackLabels(doc, stacks, x, y, width, options, true);
+}
 
-  const lineAdvance = options.size * 1.34 + options.lineGap;
-  const lineHeight = options.size * 1.34;
-  const maxX = x + width;
+function layoutStackLabels(
+  doc: PDFKit.PDFDocument,
+  stacks: string[],
+  x: number,
+  y: number,
+  width: number,
+  options: StackLabelOptions,
+  draw: boolean,
+): number {
+  if (stacks.length === 0) return 0;
+
+  const itemGap = 10;
+  const iconGap = 3.5;
   let cursorX = x;
   let cursorY = y;
 
-  for (const segment of segments) {
-    doc
-      .font(segment.bold ? fonts.bold : fonts.regular)
-      .fontSize(options.size)
-      .fillColor(colors.text);
+  doc.font(fonts.regular).fontSize(options.fontSize);
+  for (const stack of stacks) {
+    const labelWidth = doc.widthOfString(stack);
+    const itemWidth = options.iconSize + iconGap + labelWidth;
+    if (cursorX > x && cursorX + itemWidth > x + width) {
+      cursorX = x;
+      cursorY += options.lineHeight;
+    }
 
-    for (const token of splitTextTokens(segment.text)) {
-      if (token === '') continue;
-
-      if (token === '\n') {
-        cursorX = x;
-        cursorY += lineAdvance;
-        continue;
-      }
-
-      const isWhitespace = /^\s+$/.test(token);
-      const normalizedToken = isWhitespace ? ' ' : token;
-      const tokenWidth = doc.widthOfString(normalizedToken);
-
-      if (isWhitespace && cursorX === x) continue;
-
-      if (!isWhitespace && cursorX > x && cursorX + tokenWidth > maxX) {
-        cursorX = x;
-        cursorY += lineAdvance;
-      }
-
-      if (shouldDraw) {
-        doc.text(normalizedToken, cursorX, cursorY, {
+    if (draw) {
+      drawStackIcon(doc, stack, cursorX, cursorY + 0.5, options.iconSize);
+      doc
+        .font(fonts.regular)
+        .fontSize(options.fontSize)
+        .fillColor("#333333")
+        .text(stack, cursorX + options.iconSize + iconGap, cursorY + 0.2, {
           lineBreak: false,
+          width: labelWidth + 1,
         });
-      }
-      cursorX += tokenWidth;
     }
+    cursorX += itemWidth + itemGap;
   }
 
-  return cursorY + lineHeight;
+  return cursorY - y + options.lineHeight;
 }
 
-function splitTextTokens(text: string): string[] {
-  return text
-    .split(/(\n|\s+)/)
-    .flatMap((token) => {
-      if (token === '\n') return ['\n'];
-      if (/^\s+$/.test(token)) return [' '];
-      return token ? [token] : [];
-    });
-}
-
-function parseRichText(value?: string): RichSegment[] {
-  if (!value) return [];
-
-  const source = value
-    .replace(/\[([^\]]+)]\([^)]+\)/g, '$1')
-    .replace(/<br\s*\/?>/gi, '\n');
-  const tokens = source.split(/(<\/?strong\b[^>]*>|<\/?b\b[^>]*>|<[^>]+>|\*\*|__|`[^`]*`)/gi);
-  const segments: RichSegment[] = [];
-  let htmlBoldDepth = 0;
-  let markdownBold = false;
-
-  for (const token of tokens) {
-    if (!token) continue;
-
-    if (/^<strong\b/i.test(token) || /^<b\b/i.test(token)) {
-      htmlBoldDepth += 1;
-      continue;
-    }
-
-    if (/^<\/strong/i.test(token) || /^<\/b/i.test(token)) {
-      htmlBoldDepth = Math.max(0, htmlBoldDepth - 1);
-      continue;
-    }
-
-    if (token === '**' || token === '__') {
-      markdownBold = !markdownBold;
-      continue;
-    }
-
-    if (/^<[^>]+>$/.test(token)) continue;
-
-    const rawText = token.startsWith('`') && token.endsWith('`') ? token.slice(1, -1) : token;
-    const text = normalizeRichTextWhitespace(rawText);
-    appendRichSegment(segments, text, htmlBoldDepth > 0 || markdownBold);
-  }
-
-  return trimRichSegments(segments);
-}
-
-function appendRichSegment(segments: RichSegment[], text: string, bold: boolean): void {
-  if (!text) return;
-
-  const last = segments.at(-1);
-  if (last && last.bold === bold) {
-    last.text += text;
+function drawStackIcon(
+  doc: PDFKit.PDFDocument,
+  stack: string,
+  x: number,
+  y: number,
+  size: number,
+): void {
+  const iconPath = resolveStackIconPath(stack);
+  if (!iconPath || !fs.existsSync(iconPath)) {
+    doc.circle(x + size / 2, y + size / 2, size * 0.28).fill("#333333");
     return;
   }
 
-  segments.push({ bold, text });
+  let svg = stackSvgCache.get(iconPath);
+  if (!svg) {
+    svg = fs
+      .readFileSync(iconPath, "utf8")
+      .replace(/#f2f2f2/gi, "#333333");
+    stackSvgCache.set(iconPath, svg);
+  }
+
+  doc.save();
+  SVGtoPDF(doc as unknown as typeof PDFDocument, svg, x, y, {
+    width: size,
+    height: size,
+    preserveAspectRatio: "xMidYMid meet",
+    assumePt: true,
+  });
+  doc.restore();
 }
 
-function trimRichSegments(segments: RichSegment[]): RichSegment[] {
-  const trimmed = segments
-    .map((segment) => ({ ...segment }))
-    .filter((segment) => segment.text.length > 0);
-
-  if (trimmed.length === 0) return [];
-
-  trimmed[0].text = trimmed[0].text.replace(/^\s+/, '');
-  trimmed[trimmed.length - 1].text = trimmed[trimmed.length - 1].text.replace(/\s+$/, '');
-
-  return trimmed.filter((segment) => segment.text.length > 0);
+function resolveStackIconPath(stack: string): string | undefined {
+  if (!techStackIconPaths) {
+    const config = JSON.parse(fs.readFileSync(techStackConfigPath, "utf8")) as {
+      stacks: TechStackDefinition[];
+    };
+    techStackIconPaths = new Map<string, string | undefined>();
+    for (const definition of config.stacks) {
+      const iconPath = definition.icon
+        ? path.resolve(
+            process.cwd(),
+            "assets",
+            definition.icon.replace(/^\.\//, ""),
+          )
+        : undefined;
+      techStackIconPaths.set(definition.name.toLowerCase(), iconPath);
+      for (const alias of definition.aliases ?? []) {
+        techStackIconPaths.set(alias.toLowerCase(), iconPath);
+      }
+    }
+  }
+  return techStackIconPaths.get(stack.toLowerCase());
 }
 
-function decodeHtml(value: string): string {
-  return value
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&#39;/g, "'")
-    .replace(/&quot;/g, '"');
-}
-
-function normalizeRichTextWhitespace(value: string): string {
-  return decodeHtml(value)
-    .replace(/\r\n?/g, '\n')
-    .replace(/[^\S\n]+/g, ' ')
-    .replace(/ *\n */g, '\n');
-}
-
-function loadIconSvg(kind: ContactIconKind): string {
-  const iconPath = iconPaths[kind];
-  const svg = fs.readFileSync(iconPath, 'utf8');
-
-  return svg
-    .replaceAll('#f2f2f2', colors.text)
-    .replaceAll('#F2F2F2', colors.text)
-    .replaceAll('fill="currentColor"', `fill="${colors.text}"`);
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function formatPeriod(value?: string): string {
-  if (!value) return '';
-  return value.replace(/-/g, '.').replace(/\s*~\s*/g, ' - ');
-}
-
-function formatDate(value: string): string {
-  return value.replace(/-/g, '.');
-}
-
-function urlLastSegment(value?: string): string | undefined {
-  if (!value) return undefined;
-  return value.replace(/\/$/, '').split('/').pop();
+function registerFonts(doc: PDFKit.PDFDocument): void {
+  for (const [label, fontPath] of Object.entries(fontPaths)) {
+    if (!fs.existsSync(fontPath)) {
+      throw new Error(
+        `Missing Wanted Sans font file for PDF resume: ${fontPath}`,
+      );
+    }
+    doc.registerFont(fonts[label as keyof typeof fonts], fontPath);
+  }
 }
 
 function addPage(doc: PDFKit.PDFDocument): void {
-  doc.addPage({ margin: 0, size: 'A4' });
+  doc.addPage({ margin: 0, size: "A4" });
   doc.rect(0, 0, doc.page.width, doc.page.height).fill(colors.page);
 }
 
-function ensureSpace(doc: PDFKit.PDFDocument, cursor: Cursor, requiredHeight: number): void {
-  if (cursor.y + requiredHeight <= doc.page.height - PAGE_MARGIN_BOTTOM) return;
-
-  addPage(doc);
-  cursor.y = PAGE_MARGIN_TOP;
-}
-
-function getContentWidth(doc: PDFKit.PDFDocument): number {
+function contentWidth(doc: PDFKit.PDFDocument): number {
   return doc.page.width - PAGE_MARGIN_X * 2;
-}
-
-function drawPageNumbers(doc: PDFKit.PDFDocument): void {
-  const range = doc.bufferedPageRange();
-
-  for (let pageIndex = range.start; pageIndex < range.start + range.count; pageIndex += 1) {
-    doc.switchToPage(pageIndex);
-    doc
-      .font(fonts.regular)
-      .fontSize(8)
-      .fillColor(colors.faint)
-      .text(`${pageIndex + 1} / ${range.count}`, PAGE_MARGIN_X, doc.page.height - 28, {
-        align: 'right',
-        lineBreak: false,
-        width: getContentWidth(doc),
-      });
-  }
 }

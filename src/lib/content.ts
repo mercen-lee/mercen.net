@@ -7,7 +7,7 @@ import type { Locale } from './i18n';
 const ASSETS_ROOT = path.resolve(process.cwd(), 'assets');
 
 const curatedProjectTitles = [
-  'Nextgen',
+  'NextGen',
   'BL Agent',
   'WHOFA',
   'Interactor',
